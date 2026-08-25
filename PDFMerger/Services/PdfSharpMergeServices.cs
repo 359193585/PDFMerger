@@ -36,6 +36,7 @@ namespace PDFMerger.Services;
         CancellationToken cancellationToken)
     {
         var result = new MergeResult { OutputPath = outputPath };
+        string? currentFilePath = null;
 
         try
         {
@@ -58,21 +59,22 @@ namespace PDFMerger.Services;
 
                 var imageConverter = new ImageToPdfPageConverter();
 
-                foreach (var path in finalPaths)
+                foreach (var pathName in finalPaths)
                 {
+                    currentFilePath = pathName;
                     cancellationToken.ThrowIfCancellationRequested();
 
-                    string ext = Path.GetExtension(path).ToLowerInvariant();
+                    string ext = System.IO.Path.GetExtension(pathName).ToLowerInvariant();
                     bool isImage = ext is ".jpg" or ".jpeg" or ".png" or ".bmp" or ".gif" or ".tiff";
 
 
                     if (isImage)
                     {
-                        ProcessSingleImageDirect(context, path, imageConverter);
+                        ProcessSingleImageDirect(context, pathName, imageConverter);
                     }
                     else
                     {
-                        ProcessSingleFile(context, path, cancellationToken);
+                        ProcessSingleFile(context, pathName, cancellationToken);
                     }
                 }
 
@@ -113,17 +115,14 @@ namespace PDFMerger.Services;
             TryDeleteIncompleteOutputFile(outputPath);
             throw;
         }
-        catch (NotImplementedException ex) when (ex.Message.Contains(">2GiB"))
-        {
-            // Specifically handle errors for files larger than 2GB
-            result.Success = false;
-            result.ErrorMessage = T("Error_BiggerThanMaxSize", "File size exceeds 2GB limit.");
-            return result;
-        }
         catch (Exception ex)
         {
             result.Success = false;
-            result.ErrorMessage = ex.ToString();
+            result.Error = new MergeError
+            {
+                Code = MergeErrorCode.Unknown,
+                TechnicalDetail = ex.ToString()
+            };
             return result;
         }
         finally
@@ -224,9 +223,10 @@ namespace PDFMerger.Services;
         var fileInfo = new FileMergeInfo
         {
             FilePath = imagePath,
-            FileNameWithoutExtension = Path.GetFileNameWithoutExtension(imagePath),
+            FileNameWithoutExtension = System.IO.Path.GetFileNameWithoutExtension(imagePath),
             StartPageNumber = startPage,
             PageCount = 1,
+            FileSize = new FileInfo(imagePath).Length,
             OutlineNodes = new List<OutlineNode>()
         };
         context.FileInfos.Add(fileInfo);
@@ -235,7 +235,7 @@ namespace PDFMerger.Services;
         {
             FileIndex = context.FileIndex,
             TotalFiles = context.FinalPaths.Count,
-            FileName = Path.GetFileName(imagePath),
+            FileName = System.IO.Path.GetFileName(imagePath),
             PageCount = 1,
             TotalPagesProcessed = context.TotalPages,
             IsComplete = false
@@ -281,9 +281,10 @@ namespace PDFMerger.Services;
         var fileInfo = new FileMergeInfo
         {
             FilePath = filePath,
-            FileNameWithoutExtension = Path.GetFileNameWithoutExtension(filePath),
+            FileNameWithoutExtension = System.IO.Path.GetFileNameWithoutExtension(filePath),
             StartPageNumber = startPage,
             PageCount = pageCount,
+            FileSize = new FileInfo(filePath).Length,
             OutlineNodes = outlineNodes ?? new List<OutlineNode>()
         };
         context.FileInfos.Add(fileInfo);
@@ -293,7 +294,7 @@ namespace PDFMerger.Services;
         {
             FileIndex = context.FileIndex,
             TotalFiles = context.FinalPaths.Count,
-            FileName = Path.GetFileName(filePath),
+            FileName = System.IO.Path.GetFileName(filePath),
             PageCount = pageCount,
             TotalPagesProcessed = context.TotalPages,
             IsComplete = false
@@ -387,11 +388,7 @@ namespace PDFMerger.Services;
             AddOutlineNode(child, newOutline, pageOffset, outputDoc);
         }
     }
-    private static string T(string key, string defaultValue)
-    {
-        var value = I18n.GetString(key);
-        return string.IsNullOrEmpty(value) ? defaultValue : value;
-    }
+
 }
 
 #region Helper Data Structures
@@ -399,6 +396,7 @@ public class FileMergeInfo
 {
     public string FilePath { get; set; } = string.Empty;
     public string FileNameWithoutExtension { get; set; } = string.Empty;
+    public long FileSize { get; set; }
     public int StartPageNumber { get; set; } // 1-based
     public int PageCount { get; set; }
     public List<OutlineNode> OutlineNodes { get; set; } = new List<OutlineNode>();

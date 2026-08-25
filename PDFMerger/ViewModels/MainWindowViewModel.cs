@@ -476,7 +476,7 @@ namespace PDFMerger.ViewModels
                     }
                     else
                     {
-                        StatusMessage = T("Status_MergeFailed", result.ErrorMessage ?? string.Empty);
+                        StatusMessage = T("Status_MergeFailed", result.Error?.TechnicalDetail ?? string.Empty);
                     }
                 }
 

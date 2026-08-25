@@ -13,7 +13,7 @@ public class PdfMergeServiceTests : IDisposable
     {
         _pdfMergeService = new PdfSharpMergeServices();
 
-        _testDirectory = Path.Combine(Path.GetTempPath(), "PdfMergeTests_" + Guid.NewGuid().ToString("N"));
+        _testDirectory = Path.Combine(Path.GetTempPath(), "PDFMergerTests_" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_testDirectory);
     }
 
@@ -36,8 +36,8 @@ public class PdfMergeServiceTests : IDisposable
 
         // Assert
         Assert.NotNull(result);
-        Assert.True(result.Success, $"预期合并成功，但失败信息为: {result.ErrorMessage}");
-        Assert.Equal(5, result.TotalPages);
+        Assert.True(result.Success, $"预期合并成功，失败信息为: {result?.Error?.TechnicalDetail}");
+        Assert.Equal(5, result?.TotalPages);
         Assert.True(File.Exists(outputPath), "目标合并文件应在磁盘生成。");
         Assert.True(new FileInfo(outputPath).Length > 0, "合并文件大小应大于 0 字节。");
     }
@@ -94,7 +94,7 @@ public class PdfMergeServiceTests : IDisposable
         // Assert
         Assert.NotNull(result);
         Assert.False(result.Success);
-        Assert.False(string.IsNullOrWhiteSpace(result.ErrorMessage));
+        Assert.False(string.IsNullOrWhiteSpace(result?.Error?.TechnicalDetail));
         Assert.False(File.Exists(outputPath), "输入无效时不应生成目标文件。");
     }
 
