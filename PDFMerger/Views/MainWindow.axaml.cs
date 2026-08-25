@@ -75,30 +75,35 @@ namespace PDFMerger.Views
             var vm = DataContext as MainWindowViewModel;
             if (vm == null) return;
 
-            var filters = new List<FilePickerFileType>
-            {
-                new FilePickerFileType("PDF Files")
-                {
-                    Patterns = new[] { "*.pdf" }
-                }
-            };
+            var filters = new List<FilePickerFileType>();
 
             if (vm.EnableImageSupport)
             {
-                filters.Add(new FilePickerFileType("Image Files")
-                {
-                    Patterns = new[] { "*.jpg", "*.jpeg", "*.png", "*.bmp", "*.gif", "*.tiff" }
-                });
                 filters.Add(new FilePickerFileType("All Supported Files")
                 {
                     Patterns = new[] { "*.pdf", "*.jpg", "*.jpeg", "*.png", "*.bmp", "*.gif", "*.tiff" }
                 });
+                filters.Add(new FilePickerFileType("PDF Files")
+                {
+                    Patterns = new[] { "*.pdf" }
+                });
+                filters.Add(new FilePickerFileType("Image Files")
+                {
+                    Patterns = new[] { "*.jpg", "*.jpeg", "*.png", "*.bmp", "*.gif", "*.tiff" }
+                });
             }
-            var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+            else
             {
-                AllowMultiple = true,
-                FileTypeFilter = filters
-            });
+                filters.Add(new FilePickerFileType("PDF Files")
+                {
+                    Patterns = new[] { "*.pdf" }
+                });
+            }
+                var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+                {
+                    AllowMultiple = true,
+                    FileTypeFilter = filters
+                });
 
             if (files != null && files.Count > 0)
             {

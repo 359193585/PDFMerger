@@ -89,19 +89,27 @@ namespace PDFMerger.ViewModels
             }
         }
 
-        private bool _enableAddDuplicateCheck = true;
+        private bool _enableAddDuplicateCheck = false;
         public bool EnableAddDuplicateCheck
         {
             get => _enableAddDuplicateCheck;
             set => SetProperty(ref _enableAddDuplicateCheck, value);
         }
 
-        private bool _enableImageSupport = false;
+        private bool _addPageNumbers = true;
+        public bool AddPageNumbers
+        {
+            get => _addPageNumbers;
+            set => SetProperty(ref _addPageNumbers, value);
+        }
+
+        private bool _enableImageSupport = true;
         public bool EnableImageSupport
         {
             get => _enableImageSupport;
             set => SetProperty(ref _enableImageSupport, value);
         }
+
         // output PDF document properties
         private bool _isSubjectManuallySet = false;
         private string _docTitle = "MergedFiles";
@@ -134,13 +142,6 @@ namespace PDFMerger.ViewModels
         {
             get => _docCreator;
             set => SetProperty(ref _docCreator, value);
-        }
-
-        private bool _addPageNumbers;
-        public bool AddPageNumbers
-        {
-            get => _addPageNumbers;
-            set => SetProperty(ref _addPageNumbers, value);
         }
 
         // cancel support properties
