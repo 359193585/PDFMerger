@@ -2,7 +2,7 @@
 
 using System.Collections.Generic;
 
-namespace PdfMerger.Contracts;
+namespace PDFMerger.Contracts;
 
 /// <summary>
 /// Bookmark generator, used to generate bookmarks (table of contents) for merged documents.

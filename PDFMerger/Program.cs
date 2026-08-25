@@ -1,7 +1,7 @@
 using System;
 using Avalonia;
 
-namespace PdfMerger
+namespace PDFMerger
 {
     internal class Program
     {

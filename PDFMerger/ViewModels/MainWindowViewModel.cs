@@ -1,4 +1,4 @@
-// MainWindowViewMode.cs
+// MainWindowViewModel.cs
 using System;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
@@ -8,26 +8,23 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
-using Lang.Avalonia;
-using PdfMerger.Contracts;
-using PdfMerger.Infrastructure;
-using PdfMerger.Models;
-using PdfMerger.Service;
-using PdfMerger.Services;
+using PDFMerger.Contracts;
+using PDFMerger.Infrastructure;
+using PDFMerger.Models;
+using PDFMerger.Services;
 using PdfSharp.Pdf.IO;
-using SkiaSharp;
 
-namespace PdfMerger.ViewModel
+namespace PDFMerger.ViewModels
 {
     public class MainWindowViewModel : ObservableObject
     {
-        private readonly PdfSharpMergeService _pdfMergeService;
+        private readonly PdfSharpMergeServices _pdfMergeService;
         public event EventHandler<string> ShowMessageRequested = delegate { };
         public static string DefaultOutputPdfName = "outputOfMerge.pdf";
 
         public MainWindowViewModel()
         {
-            _pdfMergeService = new PdfSharpMergeService();
+            _pdfMergeService = new PdfSharpMergeServices();
             InitCommands();
             FileItems.CollectionChanged += OnFileItemsChanged;
         }
@@ -539,7 +536,7 @@ namespace PdfMerger.ViewModel
         }
         private static string T(string key, params object[] args)
         {
-            var value = I18nManager.Instance.GetResource(key);
+            var value = I18n.GetString(key);
             if (string.IsNullOrEmpty(value))
                 return key;
             return args.Length > 0 ? string.Format(value, args) : value;

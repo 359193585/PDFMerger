@@ -2,9 +2,9 @@
 //SimpleBookmarkGenerator.cs
 using System.Collections.Generic;
 using System.Linq;
-using PdfMerger.Contracts;
+using PDFMerger.Contracts;
 
-namespace PdfMerger.Services;
+namespace PDFMerger.Services;
 /// <summary>
 /// Class implementing the IBookmarkGenerator interface, used for generating bookmarks
 /// </summary>

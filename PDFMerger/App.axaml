@@ -1,8 +1,8 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             x:Class="PdfMerger.App"
+             x:Class="PDFMerger.App"
              RequestedThemeVariant="Default"
-             Name="PdfMerger">
+             Name="PDFMerger">
 
     <Application.Styles>
         <FluentTheme />
@@ -11,7 +11,7 @@
 
       <NativeMenu.Menu>
         <NativeMenu>
-            <NativeMenuItem Header="About PdfMerger" Click="OnAboutClick" />
+            <NativeMenuItem Header="About PDFMerger" Click="OnAboutClick" />
         </NativeMenu>
     </NativeMenu.Menu>
 </Application>

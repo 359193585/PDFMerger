@@ -1,5 +1,5 @@
 //MergeProgress.cs
-namespace PdfMerger.Contracts;
+namespace PDFMerger.Contracts;
 /// <summary>
 /// merge progress information, used to report the progress of merging multiple PDF files.
 /// </summary>

@@ -9,7 +9,7 @@ using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
-namespace PdfMerger.Services
+namespace PDFMerger.Services
 {
     /// <summary>
     /// image to pdf converter, supports multiple input sources and page size modes.

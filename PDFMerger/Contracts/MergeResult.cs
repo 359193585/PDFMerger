@@ -2,7 +2,7 @@
 
 using System.Collections.Generic;
 
-namespace PdfMerger.Contracts;
+namespace PDFMerger.Contracts;
 /// <summary>
 /// merge result information, used to report the result of merging multiple PDF files.
 /// </summary>

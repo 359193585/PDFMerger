@@ -3,7 +3,7 @@
 using System;
 using System.Threading;
 
-namespace PdfMerger.Contracts;
+namespace PDFMerger.Contracts;
 public class MergeOptions
 {
     public bool IgnoreDuplicates { get; set; } = true;

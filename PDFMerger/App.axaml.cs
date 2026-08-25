@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -9,11 +8,10 @@ using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Avalonia.Platform;
-using Lang.Avalonia;
-using Lang.Avalonia.Json;
-using PdfMerger.Views;
+using PDFMerger.Infrastructure;
+using PDFMerger.Views;
 
-namespace PdfMerger
+namespace PDFMerger
 {
     public partial class App : Application
     {
@@ -25,16 +23,8 @@ namespace PdfMerger
         public override void OnFrameworkInitializationCompleted()
         {
             // register the JSON plugin and set the default language to English
-            var culture = GetInitialCulture();            // default "en-US"
-            I18nManager.Instance.Register(new JsonLangPlugin(), culture, out var error);
-            if (!string.IsNullOrEmpty(error))
-            {
-                // if registration fails, fallback to en-US
-                culture = new CultureInfo("en-US");
-                I18nManager.Instance.Register(new JsonLangPlugin(), culture, out var _);
-                Debug.WriteLine($"I18n fallback to en-US due to error: {error}");
-            }
-
+            var culture = GetInitialCulture().Name;            // default "en-US"
+            I18n.Initialize(culture);
 
             if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {

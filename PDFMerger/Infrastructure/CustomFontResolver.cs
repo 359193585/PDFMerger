@@ -1,8 +1,9 @@
 using System;
 using System.IO;
-using System.Reflection;
 using Avalonia.Platform;
 using PdfSharp.Fonts;
+
+namespace PDFMerger.Infrastructure;
 
 public class CustomFontResolver : IFontResolver
 {

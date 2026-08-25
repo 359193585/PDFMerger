@@ -1,7 +1,6 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:c="https://codewf.com"
-        x:Class="PdfMerger.Views.AboutWindow"
+        x:Class="PDFMerger.Views.AboutWindow"
         Title="About PDFMerger"
         Width="360"
         Height="260"
@@ -51,7 +50,7 @@
                Margin="0,8,0,0" />
 
     <TextBox Grid.Row="4"
-             Text="https://github.com/359193585/PdfMerger"
+             Text="https://github.com/359193585/PDFMerger"
              IsReadOnly="True"
              Background="Transparent"
              BorderThickness="0"
@@ -66,12 +65,13 @@
 
     <StackPanel Grid.Row="5"
                 Orientation="Horizontal" HorizontalAlignment="Center" Spacing="10">
-      <Button Content="{c:I18n MainWindow_CheckForUpdates}"
+      <Button Content="CheckForUpdates"
               Click="OnCheckForUpdatesClick"
               Background="#4A90D9"
               Foreground="White"
               CornerRadius="6"
               Padding="12,6" />
+
       <TextBlock x:Name="UpdateStatusTextBlock"
                  Text=""
                  VerticalAlignment="Center"

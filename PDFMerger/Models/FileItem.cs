@@ -1,7 +1,7 @@
 //FileItem.cs
-using PdfMerger.Infrastructure;
+using PDFMerger.Infrastructure;
 
-namespace PdfMerger.Models
+namespace PDFMerger.Models
 {
     public class FileItem : ObservableObject
     {

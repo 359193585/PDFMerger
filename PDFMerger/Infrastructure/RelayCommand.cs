@@ -3,7 +3,7 @@ using System;
 using System.Threading.Tasks;
 using System.Windows.Input;
 
-namespace PdfMerger.Infrastructure
+namespace PDFMerger.Infrastructure
 {
     public class RelayCommand : ICommand
     {

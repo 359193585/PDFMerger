@@ -5,12 +5,12 @@ using System.Reflection;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace PdfMerger.Services
+namespace PDFMerger.Services
 {
     public static class UpdateService
     {
         private const string RepoOwner = "359193585";
-        private const string RepoName = "PdfMerger";
+        private const string RepoName = "PDFMerger";
 
         public static async Task<string?> GetLatestVersionAsync()
         {

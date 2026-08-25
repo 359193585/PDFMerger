@@ -1,23 +1,17 @@
-using System;
-using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
-using PdfMerger.Contracts;
-using PdfMerger.Service;
-using PdfSharp.Drawing;
+using PDFMerger.Contracts;
+using PDFMerger.Services;
 using PdfSharp.Pdf;
-using Xunit;
 
 namespace PDFMerger.Tests;
 
 public class PdfMergeServiceTests : IDisposable
 {
-    private readonly PdfSharpMergeService _pdfMergeService;
+    private readonly PdfSharpMergeServices _pdfMergeService;
     private readonly string _testDirectory;
 
     public PdfMergeServiceTests()
     {
-        _pdfMergeService = new PdfSharpMergeService();
+        _pdfMergeService = new PdfSharpMergeServices();
 
         _testDirectory = Path.Combine(Path.GetTempPath(), "PdfMergeTests_" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_testDirectory);

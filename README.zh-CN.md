@@ -1,12 +1,12 @@
-# [English](https://github.com/359193585/PdfPigBundle/blob/main/README.md) · 中文
+# [English](https://github.com/359193585/PDFMerger/blob/main/README.md) · 中文
 
 # 📄 PDFMerger - 免费、离线、跨平台 PDF 合并工具
 
 一款简洁、免费、跨平台 PDF 合并工具，支持保留原始书签目录结构，并自动生成文件名为一级目录。无广告、无弹窗、无水印，专为高效办公和信创环境打造。
 
 > 🚀 **无需安装，解压即用**  
-> 👉 [立即下载 (GitHub Releases)](https://github.com/359193585/PdfPigBundle/releases)  
-> 👉 [国内镜像下载 (Gitee Releases)](https://gitee.com/leison01010101/PdfPigBundle/releases)
+> 👉 [立即下载 (GitHub Releases)](https://github.com/359193585/PDFMerger/releases)  
+> 👉 [国内镜像下载 (Gitee Releases)](https://gitee.com/leison01010101/PDFMerger/releases)
 
 
 ---
@@ -14,15 +14,15 @@
 ## ✨ 功能特点
 
 - **多文件合并**：支持任意数量的 PDF 文件合并为一个。
-- **PDF和图片混合合并**：支持任意数量的 PDF 文件和图片合并为一个PDF输出。
+- **PDF和图片混合合并**：支持任意数量的 PDF 文件和 图片 混合合并为一个PDF输出。
 - **书签保留与增强**：
-  - 如果源文件已有书签，合并后保留完整层级结构。
-  - 以 **源文件名** 作为一级书签目录，原书签自动降级为其子节点（方便快速定位）。
+  - 以 **源文件名** 作为一级书签目录
+  - 如果源文件已有书签，合并后保留书签层级结构，自动降级为其子节点（方便快速定位）。
 - **元数据设置**：可自定义输出文件的作者、标题、主题等信息。
 - **重复文件智能过滤/或允许**：可选择的忽略重复添加文件或允许重复文件。
 - **实时进度反馈**：图形界面显示合并进度。
 - **跨平台支持**：Windows、macOS（Intel + Apple Silicon）、Linux（x64 + ARM64）。
-- **纯离线运行**：无需联网，数据不上传，保障隐私安全。
+- **纯离线运行**：无需联网，PDF和图片文档数据本地处理，无上传，保障隐私安全。（用户在关于窗体上主动点击升级软件需联网，但不会传输用户数据）
 - **干净无打扰**：无广告、无会员、无使用限制。
 
 ---
@@ -47,9 +47,9 @@
 </div>
 
 
-1. 下载对应平台的压缩包，解压后运行 `PdfMerger` 可执行文件。
+1. 下载对应平台的压缩包，解压后运行 `PDFMerger` 可执行文件。
 2. 主界面：
-   - 点击 **“添加文件”** 或直接将 PDF 文件拖入窗口。
+   - 点击 **“添加文件”** 或直接将 PDF/IMG 文件拖入窗口。
    - 支持多选，支持多次添加。
    - 可调整文件顺序（上移/下移）。
    - 输出路径默认自动生成，也可手动选择。
@@ -61,22 +61,16 @@
 ## 预编译包
 - 前往 Releases 页面下载适合您系统的压缩包：
 
-  - PdfMerger-win-x64.zip – Windows 64位
-  - PDFMerger.1.2.0.win-x64-bundled.zip Windows 64位自包含运行时版
-  
-  - PDFMerger.1.2.0.macos-x64.app.tar.gz – macOS Intel
+  - PDFMerger.1.0.0.win-x64.zip – Windows 64位
+  - PDFMerger.1.0.0.win-x64-bundled.zip Windows 64位自包含运行时版
+  - PDFMerger.1.0.0.macos-x64.app.tar.gz – macOS Intel
+  - PDFMerger.1.0.0.macos-arm64.app.tar.gz – macOS Apple Silicon
+  - PDFMerger.1.0.0.linux-x64.tar.gz – Linux 64位
+  - PDFMerger.1.0.0.linux-x64-bundled.tar.gz -Linux 64位自包含运行时版
+  - PDFMerger.1.0.0.linux-arm64.tar.gz – Linux ARM64 (信创设备)
+  - PDFMerger.1.0.0.linux-arm64-bundled.tar.gz – Linux ARM64 (信创设备)自包含运行时版
 
-  - PDFMerger.1.2.0.macos-arm64.app.tar.gz – macOS Apple Silicon
-
-  - PDFMerger.1.2.0.linux-x64.tar.gz – Linux 64位
-  
-  - PDFMerger.1.2.0.linux-x64-bundled.tar.gz -Linux 64位自包含运行时版
-   
-  - PDFMerger.1.2.0.linux-arm64.tar.gz – Linux ARM64 (信创设备)
-  
-  - PDFMerger.1.2.0.linux-arm64-bundled.tar.gz – Linux ARM64 (信创设备)自包含运行时版
-
-- 解压后，直接双击 PdfMerger 即可运行（Linux/macOS 可能需要授予执行权限）。
+- 解压后，直接双击 PDFMerger 即可运行（Linux/macOS 可能需要授予执行权限）。
 
 # 🛠️ 开发者指南
 ## 环境要求

@@ -2,10 +2,10 @@ using System;
 using System.Reflection;
 using Avalonia.Controls;
 using Avalonia.Input;
-using Lang.Avalonia;
-using PdfMerger.Services;
+using PDFMerger.Infrastructure;
+using PDFMerger.Services;
 
-namespace PdfMerger.Views;
+namespace PDFMerger.Views;
 
 public partial class AboutWindow : Window
 {
@@ -79,7 +79,7 @@ public partial class AboutWindow : Window
     }
     private static string T(string key, params object[] args)
     {
-        var value = I18nManager.Instance.GetResource(key);
+        var value = I18n.GetString(key);
         if (string.IsNullOrEmpty(value))
             return key;
         return args.Length > 0 ? string.Format(value, args) : value;

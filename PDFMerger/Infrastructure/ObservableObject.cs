@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
-namespace PdfMerger.Infrastructure
+namespace PDFMerger.Infrastructure
 {
     /// <summary>
     /// base class implementing INotifyPropertyChanged, providing the basic functionality for property change notification.

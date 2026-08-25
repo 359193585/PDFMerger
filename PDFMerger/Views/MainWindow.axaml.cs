@@ -9,12 +9,12 @@ using Avalonia.Data;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
-using Lang.Avalonia;
 using MsBox.Avalonia;
-using PdfMerger.Models;
-using PdfMerger.ViewModel;
+using PDFMerger.Infrastructure;
+using PDFMerger.Models;
+using PDFMerger.ViewModels;
 
-namespace PdfMerger.Views
+namespace PDFMerger.Views
 {
     public partial class MainWindow : Window
     {
@@ -311,7 +311,7 @@ namespace PdfMerger.Views
 
         private static string T(string key, params object[] args)
         {
-            var value = I18nManager.Instance.GetResource(key);
+            var value = I18n.GetString(key);
             if (string.IsNullOrEmpty(value))
                 return key;
             return args.Length > 0 ? string.Format(value, args) : value;

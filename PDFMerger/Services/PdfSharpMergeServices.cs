@@ -1,4 +1,4 @@
-//PdfSharpMergeService.cs
+//PdfSharpMergeServices.cs
 
 using System;
 using System.Collections.Generic;
@@ -6,20 +6,19 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Lang.Avalonia;
-using PdfMerger.Contracts;
-using PdfMerger.Services;
+using PDFMerger.Contracts;
+using PDFMerger.Infrastructure;
 using PdfSharp.Drawing;
 using PdfSharp.Fonts;
 using PdfSharp.Pdf;
 using PdfSharp.Pdf.IO;
 
-namespace PdfMerger.Service;
+namespace PDFMerger.Services;
 
     /// <summary>
     /// PDF merging service implemented with PDFsharp, supporting retention of original bookmarks and using file names as first-level directories
     /// </summary>
-    public class PdfSharpMergeService
+    public class PdfSharpMergeServices
 {
     public Task<MergeResult> MergeAsync(
         string[] filePaths,
@@ -390,7 +389,7 @@ namespace PdfMerger.Service;
     }
     private static string T(string key, string defaultValue)
     {
-        var value = I18nManager.Instance.GetResource(key);
+        var value = I18n.GetString(key);
         return string.IsNullOrEmpty(value) ? defaultValue : value;
     }
 }
