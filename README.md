@@ -113,8 +113,8 @@ A: Please download the -osx-arm64 version to ensure you are using the package ma
 # 📧 Contact
 For business cooperation or customization requirements, please contact us via GitHub Issues.
 
-# Note：
-- 🛡️ The macOS version of the program is not digitally signed. If you downloaded the tar.gz package from the GitHub Release, after extraction, macOS will automatically add an extended attribute named com.apple.quarantine to the file, which is the "unknown origin" tag.
+# 🛡️ Note：
+- The macOS version of the program is not digitally signed. If you downloaded the tar.gz package from the GitHub Release, after extraction, macOS will automatically add an extended attribute named com.apple.quarantine to the file, which is the "unknown origin" tag.
 
 - When you try to run an application with this tag, Gatekeeper will perform stricter security checks.
 - For applications that have not passed Apple Notarization, the system will pop up a prompt saying "is damaged and can't be opened".
