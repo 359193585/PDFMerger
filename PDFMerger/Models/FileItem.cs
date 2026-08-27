@@ -54,9 +54,5 @@ namespace PDFMerger.Models
        
 
     }
-    public enum FileType
-    {
-        Pdf,
-        Image
-    }
+  
 }

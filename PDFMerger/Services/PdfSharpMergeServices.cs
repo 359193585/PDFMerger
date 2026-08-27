@@ -12,6 +12,7 @@ using PdfSharp.Drawing;
 using PdfSharp.Fonts;
 using PdfSharp.Pdf;
 using PdfSharp.Pdf.IO;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace PDFMerger.Services;
 
@@ -64,15 +65,16 @@ namespace PDFMerger.Services;
                     currentFilePath = pathName;
                     cancellationToken.ThrowIfCancellationRequested();
 
+                    ImageFormatInfo imageFormatInfo = new ImageFormatDetector().Detect(pathName);
                     string ext = System.IO.Path.GetExtension(pathName).ToLowerInvariant();
-                    bool isImage = ext is ".jpg" or ".jpeg" or ".png" or ".bmp" or ".gif" or ".tiff";
 
+                    bool isImage = imageFormatInfo.Format.ToString() == "Unknown" ? false : true;
 
                     if (isImage)
                     {
                         ProcessSingleImageDirect(context, pathName, imageConverter);
                     }
-                    else
+                    else if (string.Equals(ext, ".pdf", StringComparison.OrdinalIgnoreCase))
                     {
                         ProcessSingleFile(context, pathName, cancellationToken);
                     }

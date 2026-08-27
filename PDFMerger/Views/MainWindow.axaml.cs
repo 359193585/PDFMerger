@@ -77,33 +77,35 @@ namespace PDFMerger.Views
 
             var filters = new List<FilePickerFileType>();
 
+            string[] pdfPat = FileExtensions.PdfPatterns;
+            string[] imgPat = FileExtensions.ImagePatterns;
             if (vm.EnableImageSupport)
             {
                 filters.Add(new FilePickerFileType("All Supported Files")
                 {
-                    Patterns = new[] { "*.pdf", "*.jpg", "*.jpeg", "*.png", "*.bmp", "*.gif", "*.tiff" }
+                    Patterns = pdfPat.Concat(imgPat).ToArray()
                 });
                 filters.Add(new FilePickerFileType("PDF Files")
                 {
-                    Patterns = new[] { "*.pdf" }
+                    Patterns = pdfPat
                 });
                 filters.Add(new FilePickerFileType("Image Files")
                 {
-                    Patterns = new[] { "*.jpg", "*.jpeg", "*.png", "*.bmp", "*.gif", "*.tiff" }
+                    Patterns = imgPat
                 });
             }
             else
             {
                 filters.Add(new FilePickerFileType("PDF Files")
                 {
-                    Patterns = new[] { "*.pdf" }
+                    Patterns = pdfPat
                 });
             }
-                var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
-                {
-                    AllowMultiple = true,
-                    FileTypeFilter = filters
-                });
+            var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+            {
+                AllowMultiple = true,
+                FileTypeFilter = filters
+            });
 
             if (files != null && files.Count > 0)
             {

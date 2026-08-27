@@ -203,9 +203,9 @@ namespace PDFMerger.ViewModels
                         var item = new FileItem { FilePath = path, FileName = Path.GetFileName(path) };
                         // determine file type
                         string ext = Path.GetExtension(path).ToLower();
-                        if (ext == ".pdf")
+                        if (FileExtensions.PdfExtensions.Contains(ext))
                             item.Type = FileType.Pdf;
-                        else if (EnableImageSupport && (ext == ".jpg" || ext == ".jpeg" || ext == ".png" || ext == ".bmp" || ext == ".gif" || ext == ".tiff"))
+                        else if (EnableImageSupport && FileExtensions.ImageExtensions.Contains(ext))
                             item.Type = FileType.Image;
                         else
                             continue; // unsupported type, skip
