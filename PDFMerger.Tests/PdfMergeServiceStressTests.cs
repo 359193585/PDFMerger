@@ -10,11 +10,11 @@ using PdfSharp.Pdf;
 namespace PDFMerger.Tests;
 public class PdfMergeServiceStressTests : IDisposable
 {
-    private readonly PdfSharpMergeServices _pdfMergeService;
+    private readonly PdfSharpMergeService _pdfMergeService;
     private readonly string _testDirectory;
     public PdfMergeServiceStressTests()
     {
-        _pdfMergeService = new PdfSharpMergeServices();
+        _pdfMergeService = new PdfSharpMergeService();
 
         _testDirectory = Path.Combine(Path.GetTempPath(), "PDFMergerTests_" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_testDirectory);

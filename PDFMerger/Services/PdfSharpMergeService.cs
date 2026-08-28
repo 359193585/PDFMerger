@@ -1,4 +1,4 @@
-//PdfSharpMergeServices.cs
+//PdfSharpMergeService.cs
 
 using System;
 using System.Collections.Generic;
@@ -12,14 +12,13 @@ using PdfSharp.Drawing;
 using PdfSharp.Fonts;
 using PdfSharp.Pdf;
 using PdfSharp.Pdf.IO;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace PDFMerger.Services;
 
-    /// <summary>
-    /// PDF merging service implemented with PDFsharp, supporting retention of original bookmarks and using file names as first-level directories
-    /// </summary>
-    public class PdfSharpMergeServices
+/// <summary>
+/// PDF merging service implemented with PDFsharp, supporting retention of original bookmarks and using file names as first-level directories
+/// </summary>
+public class PdfSharpMergeService
 {
     public Task<MergeResult> MergeAsync(
         string[] filePaths,
@@ -68,15 +67,13 @@ namespace PDFMerger.Services;
                     ImageFormatInfo imageFormatInfo = new ImageFormatDetector().Detect(pathName);
                     string ext = System.IO.Path.GetExtension(pathName).ToLowerInvariant();
 
-                    bool isImage = imageFormatInfo.Format.ToString() == "Unknown" ? false : true;
-
-                    if (isImage)
+                    if (imageFormatInfo.IsRaster || imageFormatInfo.IsVector)
                     {
                         ProcessSingleImageDirect(context, pathName, imageConverter);
                     }
                     else if (string.Equals(ext, ".pdf", StringComparison.OrdinalIgnoreCase))
                     {
-                        ProcessSingleFile(context, pathName, cancellationToken);
+                        ProcessSinglePdfFile(context, pathName, cancellationToken);
                     }
                 }
 
@@ -123,12 +120,10 @@ namespace PDFMerger.Services;
             result.Error = new MergeError
             {
                 Code = MergeErrorCode.Unknown,
-                TechnicalDetail = ex.ToString()
+                TechnicalDetail = ex.ToString(),
+                FilePath = currentFilePath
             };
             return result;
-        }
-        finally
-        {
         }
     }
 
@@ -247,26 +242,24 @@ namespace PDFMerger.Services;
         context.FileIndex++;
     }
 
-    private void ProcessSingleFile(MergeContext context, string path, CancellationToken cancellationToken)
+    private void ProcessSinglePdfFile(MergeContext context, string path, CancellationToken cancellationToken)
     {
 
-        using (var inputDocument = PdfReader.Open(path, PdfDocumentOpenMode.Import))
+        using var inputDocument = PdfReader.Open(path, PdfDocumentOpenMode.Import);
+        var pageIndexMap = new Dictionary<PdfPage, int>();
+        for (int i = 0; i < inputDocument.PageCount; i++)
         {
-            var pageIndexMap = new Dictionary<PdfPage, int>();
-            for (int i = 0; i < inputDocument.PageCount; i++)
-            {
-                pageIndexMap[inputDocument.Pages[i]] = i;
-            }
-
-            int pageCount = inputDocument.PageCount;
-            int startPage = context.TotalPages + 1; // 1-based
-
-            var outlineNodes = ExtractOutlineNodes(inputDocument.Outlines, pageIndexMap);
-
-            var pages = inputDocument.Pages.Cast<PdfPage>();
-            cancellationToken.ThrowIfCancellationRequested();
-            ProcessPages(context, path, pages, pageCount, outlineNodes, cancellationToken);
+            pageIndexMap[inputDocument.Pages[i]] = i;
         }
+
+        int pageCount = inputDocument.PageCount;
+        int startPage = context.TotalPages + 1; // 1-based
+
+        var outlineNodes = ExtractOutlineNodes(inputDocument.Outlines, pageIndexMap);
+
+        var pages = inputDocument.Pages.Cast<PdfPage>();
+        cancellationToken.ThrowIfCancellationRequested();
+        ProcessPages(context, path, pages, pageCount, outlineNodes, cancellationToken);
     }
 
     private void ProcessPages(
@@ -410,5 +403,5 @@ public class OutlineNode
     public int PageIndex { get; set; } // 0-based within source
     public List<OutlineNode> Children { get; set; } = new List<OutlineNode>();
 }
-    #endregion
+#endregion
 

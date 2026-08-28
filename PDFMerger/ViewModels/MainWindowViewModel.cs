@@ -8,6 +8,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using Avalonia.Controls;
 using PDFMerger.Contracts;
 using PDFMerger.Infrastructure;
 using PDFMerger.Models;
@@ -18,13 +19,13 @@ namespace PDFMerger.ViewModels
 {
     public class MainWindowViewModel : ObservableObject
     {
-        private readonly PdfSharpMergeServices _pdfMergeService;
+        private readonly PdfSharpMergeService _pdfMergeService;
         public event EventHandler<string> ShowMessageRequested = delegate { };
         public static string DefaultOutputPdfName = "outputOfMerge.pdf";
 
         public MainWindowViewModel()
         {
-            _pdfMergeService = new PdfSharpMergeServices();
+            _pdfMergeService = new PdfSharpMergeService();
             InitCommands();
             FileItems.CollectionChanged += OnFileItemsChanged;
         }
@@ -196,65 +197,39 @@ namespace PDFMerger.ViewModels
             // However, updating the collection must be done on the UI thread.
             Task.Run(() =>
             {
+                var inspectionService = new FileInspectionService();
                 foreach (var path in paths)
                 {
-                    if (File.Exists(path) && (EnableAddDuplicateCheck ? !FileItems.Any(f => f.FilePath == path) : true))
+                    if (File.Exists(path)
+                    && (EnableAddDuplicateCheck ? !FileItems.Any(f => f.FilePath == path) : true))
                     {
-                        var item = new FileItem { FilePath = path, FileName = Path.GetFileName(path) };
-                        // determine file type
-                        string ext = Path.GetExtension(path).ToLower();
-                        if (FileExtensions.PdfExtensions.Contains(ext))
-                            item.Type = FileType.Pdf;
-                        else if (EnableImageSupport && FileExtensions.ImageExtensions.Contains(ext))
-                            item.Type = FileType.Image;
+                        var item = new FileItem
+                        {
+                            FilePath = path,
+                            FileName = Path.GetFileName(path)
+                        };
+
+                        var fileInspectInfo = inspectionService.Inspect(path);
+                        if (fileInspectInfo != null && fileInspectInfo.IsSupported)
+                        {
+                            item.Type = fileInspectInfo.Type;
+                            item.PageCount = fileInspectInfo.PageCount;
+                            item.Author = fileInspectInfo.Author;
+                            item.IsEncrypted = fileInspectInfo.IsEncrypted;
+                            item.FileSize = fileInspectInfo.FileSize;
+                        }
                         else
                             continue; // unsupported type, skip
 
-                        // read information (PDF read page count, author; image can be ignored or read size, but temporarily keep simple information)
-                        try
-                        {
-                            if (item.Type == FileType.Pdf) // pdf file
-                            {
-                                try
-                                {
-                                    using (var doc = PdfReader.Open(path, PdfDocumentOpenMode.Import))
-                                    {
-                                        item.PageCount = doc.PageCount;
-                                        item.Author = doc.Info.Author ?? "";
-                                    }
-                                }
-                                catch (PdfReaderException ex)
-                                {
-                                    if (ex.Message.Contains("password") || ex.Message.Contains("encrypted"))
-                                    {
-                                        item.IsEncrypted = true;
-                                        item.Author = T("Status_Encrypted");
-                                        item.PageCount = 0;
-                                    }
-                                    else
-                                    {
-                                        throw; // other errors, rethrow to be caught by outer catch
-                                    }
-                                }
-                            }
-                            else  // image file
-                            {
-                                // image: set page count to 1, author to "Img"
-                                item.PageCount = 1;
-                                item.Author = "Img";
-                            }
-                            var fi = new FileInfo(path);
-                            item.FileSize = fi.Length;
-                        }
-                        catch
-                        {
-                            item.PageCount = 0;
-                            item.Author = "ReadError";
-                            item.FileSize = 0;
-                        }
-
                         // marshal the add operation to the UI thread via Dispatcher
-                        Avalonia.Threading.Dispatcher.UIThread.Post(() => FileItems.Add(item));
+                        if (fileInspectInfo.PageCount > 0)
+                        {
+                            Avalonia.Threading.Dispatcher.UIThread.Post(() => FileItems.Add(item));
+                        }
+                        else
+                        {
+                            StatusMessage = T("Status_SkippedFile", item.FileName);
+                        }
                     }
                 }
             }).ContinueWith(_ =>
@@ -385,7 +360,7 @@ namespace PDFMerger.ViewModels
 
             string firstFileName = Path.GetFileNameWithoutExtension(FileItems[0].FileName);
             string date = DateTime.Now.ToString("yyyy-MM-dd");
-            string subject = $"{date} {firstFileName} MergeredFiles";
+            string subject = $"{date} {firstFileName} MergedFiles";
             _docSubject = subject;
             OnPropertyChanged(nameof(DocSubject));
         }
@@ -562,7 +537,7 @@ namespace PDFMerger.ViewModels
             OutputPath = finalPath;
         }
 
-        
+
         #endregion
     }
 }

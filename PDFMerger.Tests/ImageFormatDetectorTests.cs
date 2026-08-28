@@ -1,7 +1,9 @@
 using System.Text;
 using PDFMerger.Services;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
 
-namespace PDFMerger.Tests;
+namespace PDFMerger.Tests.Services;
 
 
 public class ImageFormatDetectorTests
@@ -56,6 +58,20 @@ public class ImageFormatDetectorTests
         Assert.False(result.IsVector);
     }
 
+    [Fact]
+    public void Detect_ValidSingleFramePng_ReturnsFrameCountOne()
+    {
+        using var image = new Image<Rgba32>(10, 10);
+        using var stream = new MemoryStream();
+
+        image.SaveAsPng(stream);
+        stream.Position = 0;
+
+        var result = _detector.Detect(stream);
+
+        Assert.Equal(ImageFormat.Png, result.Format);
+        Assert.Equal(1, result.FrameCount);
+    }
     // --------------------------------------------------------------------
     // GIF
     // --------------------------------------------------------------------
@@ -77,7 +93,26 @@ public class ImageFormatDetectorTests
         Assert.True(result.IsRaster);
         Assert.False(result.IsVector);
     }
+    [Fact]
+    public void Detect_ValidMultiFrameGif_ReturnsCorrectFrameCount()
+    {
+        // Arrange
+        using var image = new Image<Rgba32>(10, 10);
 
+        image.Frames.AddFrame(image.Frames.RootFrame);
+        image.Frames.AddFrame(image.Frames.RootFrame);
+
+        using var stream = new MemoryStream();
+        image.SaveAsGif(stream);
+        stream.Position = 0;
+
+        // Act
+        var result = _detector.Detect(stream);
+
+        // Assert
+        Assert.Equal(ImageFormat.Gif, result.Format);
+        Assert.Equal(3, result.FrameCount);
+    }
     // --------------------------------------------------------------------
     // BMP
     // --------------------------------------------------------------------

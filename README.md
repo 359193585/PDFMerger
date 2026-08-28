@@ -115,12 +115,19 @@ A: Please download the -osx-arm64 version to ensure you are using the package ma
 For business cooperation or customization requirements, please contact us via GitHub Issues.
 
 # 🛡️ Note：
-- The macOS version of the program is not digitally signed. If you downloaded the tar.gz package from the GitHub Release, after extraction, macOS will automatically add an extended attribute named com.apple.quarantine to the file, which is the "unknown origin" tag.
-
-- When you try to run an application with this tag, Gatekeeper will perform stricter security checks.
-- For applications that have not passed Apple Notarization, the system will pop up a prompt saying "is damaged and can't be opened".
-- This issue is essentially "false damage" caused by the security mechanism, not that the file is actually broken.
-- You can remove the quarantine attribute by using the xattr command in the terminal for a single .app file to remove this attribute.
+- Usage of the macOS version software
+  - The macOS version of the program is not digitally signed. If you downloaded the tar.gz package from the GitHub Release, after extraction, macOS will automatically add an extended attribute named com.apple.quarantine to the file, which is the "unknown origin" tag.
+  
+  - When you try to run an application with this tag, Gatekeeper will perform stricter security checks.
+  - For applications that have not passed Apple Notarization, the system will pop up a prompt saying "is damaged and can't be opened".
+  - This issue is essentially "false damage" caused by the security mechanism, not that the file is actually broken.
+  - You can remove the quarantine attribute by using the xattr command in the terminal for a single .app file to remove this attribute.
 ```
 xattr -d com.apple.quarantine /path/to/PDFMerger.app
 ```
+- Support for Image Files
+  - Supported image file formats include common formats such as JPEG, PNG, BMP, GIF, TIFF, and WEBP.
+  - If you encounter an unrecognizable image file, please ensure the file format is correct and try opening it with another image viewer to confirm its validity.
+  - TIFF files decodable by the current ImageSharp TIFF decoder are supported; specially encoded TIFF files may not be recognized.
+  - For files in formats such as tif, gif, and webp, if they contain multiple frames, each frame will be added to the PDF file as an independent page. If you only need one page, please process the image in advance.
+  - 

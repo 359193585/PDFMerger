@@ -116,12 +116,20 @@ A: 请下载 -osx-arm64 版本，确保您使用的是对应架构的包。
 
 
 # 🛡️ 注意：
-- macOS 版程序没有数字签名，如果你从github release 下载了该 tar.gz 包，解压后，macOS会系统会自动给该文件添加一个名为 com.apple.quarantine 的扩展属性，即“来源不明”的标签。
+- mac版软件的使用
 
-- 当你尝试运行带有此标签的应用时，Gatekeeper 会进行更严格的安全检查。
-- 对于未通过 Apple 公证（Notarization）的应用，系统就会弹出“已损坏，无法打开”的提示。
-- 这个问题本质上是安全机制导致的“假损坏”，而非文件真的坏了。
-- 你可以移除隔离属性，在终端中，针对单个 .app 文件，使用 xattr 命令移除该属性。
+  - macOS 版程序没有数字签名，如果你从github release 下载了该 tar.gz 包，解压后，macOS会系统会自动给该文件添加一个名为 com.apple.quarantine 的扩展属性，即“来源不明”的标签。
+  
+  - 当你尝试运行带有此标签的应用时，Gatekeeper 会进行更严格的安全检查。
+  - 对于未通过 Apple 公证（Notarization）的应用，系统就会弹出“已损坏，无法打开”的提示。
+  - 这个问题本质上是安全机制导致的“假损坏”，而非文件真的坏了。
+  - 你可以移除隔离属性，在终端中，针对单个 .app 文件，使用 xattr 命令移除该属性。
 ```
-xattr -d com.apple.quarantine /path/to/PDFMerger.app
+   xattr -d com.apple.quarantine /path/to/PDFMerger.app
 ```
+- 图像文件的支持
+  - 支持的图像文件格式包括：JPEG、PNG、BMP、GIF、TIFF、WEBP 等常见格式。
+  - 如果你遇到无法识别的图像文件，请确保文件格式正确，并尝试使用其他图像查看器打开以确认其有效性。
+  - 支持由当前 ImageSharp TIFF decoder 能够解码的 TIFF，特殊编码的 TIFF 文件可能无法识别。
+  - 对于tif、gif、webp等格式文件，如果有多幅画面，会将每幅画面作为独立页加入pdf文件，如你只需要一页，请提前处理好图片。
+  

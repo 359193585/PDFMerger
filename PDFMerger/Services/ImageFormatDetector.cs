@@ -1,6 +1,8 @@
 // ImageFormatDetector.cs
 using System;
 using System.IO;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
 
 namespace PDFMerger.Services;
 
@@ -60,6 +62,11 @@ public sealed class ImageFormatInfo
         ImageFormat.Svg => true,
         _ => false
     };
+
+    public bool IsSupported => Format != ImageFormat.Unknown;
+    public bool IsMultiFrame => IsMultiFrameCandidate && IsRaster;
+    public bool IsSingleFrame => !IsMultiFrameCandidate && IsRaster;
+    public int FrameCount { get; internal set; }
 }
 
 public sealed class ImageFormatDetector
@@ -104,8 +111,9 @@ public sealed class ImageFormatDetector
             Span<byte> header = stackalloc byte[64];
 
             int bytesRead = ReadAtLeast(stream, header);
-
-            return DetectFormat(header[..bytesRead]);
+            ImageFormatInfo imageFormatInfo = DetectFormat(header[..bytesRead]);
+            imageFormatInfo.FrameCount = GetFrameCount(stream);
+            return imageFormatInfo;
         }
         finally
         {
@@ -476,14 +484,12 @@ public sealed class ImageFormatDetector
             StringComparison.OrdinalIgnoreCase);
     }
 
-    private static ImageFormatInfo Info(
-        ImageFormat format,
-        bool multiFrame)
+    private static ImageFormatInfo Info(ImageFormat format, bool multiFrame)
     {
         return new ImageFormatInfo
         {
             Format = format,
-            IsMultiFrameCandidate = multiFrame
+            IsMultiFrameCandidate = multiFrame,
         };
     }
 
@@ -546,5 +552,19 @@ public sealed class ImageFormatDetector
         }
 
         return total;
+    }
+    private int GetFrameCount(Stream imageStream)
+    {
+        try
+        {
+            if (imageStream.CanSeek) imageStream.Position = 0;
+            using var image = Image.Load<Rgba32>(imageStream);
+
+            return image.Frames.Count;
+        }
+        catch
+        {
+            return 0;
+        }
     }
 }
