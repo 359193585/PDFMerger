@@ -65,7 +65,7 @@ public class PdfSharpMergeService
 
                     if (imageFormatInfo.IsRaster || imageFormatInfo.IsVector)
                     {
-                        ProcessSingleImageFile(context, pathName, imageConverter);
+                        ProcessSingleImageFile(context, pathName, imageConverter, cancellationToken);
                     }
                     else if (string.Equals(ext, ".pdf", StringComparison.OrdinalIgnoreCase))
                     {
