@@ -9,8 +9,6 @@ using System.Threading.Tasks;
 using PDFMerger.Contracts;
 using PDFMerger.Infrastructure;
 using PDFMerger.Models;
-using PdfSharp.Drawing;
-using PdfSharp.Fonts;
 using PdfSharp.Pdf;
 using PdfSharp.Pdf.IO;
 
@@ -92,13 +90,13 @@ public class PdfSharpMergeService
                 //  Generate bookmarks (if a generator is provided or the original document has bookmarks)
                 if (options.BookmarkGenerator != null || context.FileInfos.Any(f => f.OutlineNodes.Any()))
                 {
-                    GenerateBookmarks(outputDocument, context.FileInfos);
+                    _pdfBookmarkBuilder.GenerateBookmarks(outputDocument, context.FileInfos);
                 }
 
                 // After all pages are added, check if page numbers need to be added
                 if (options.AddPageNumbers && result.TotalPages > 0)
                 {
-                    AddPageNumbers(outputDocument);
+                    _pdfPageNumberService.AddPageNumbers(outputDocument);
                 }
 
                 cancellationToken.ThrowIfCancellationRequested();
@@ -125,6 +123,8 @@ public class PdfSharpMergeService
         }
     }
 
+    private PdfBookmarkBuilder _pdfBookmarkBuilder = new PdfBookmarkBuilder();
+    private PdfPageNumberService _pdfPageNumberService = new PdfPageNumberService();
     private void TryDeleteIncompleteOutputFile(string path)
     {
         if (string.IsNullOrEmpty(path) || !File.Exists(path))
@@ -162,53 +162,7 @@ public class PdfSharpMergeService
         public int FileIndex { get; set; }= 0;
     }
 
-    private void AddPageNumbers(PdfDocument document)
-    {
-        int totalPages = document.PageCount;
-        // Use standard Helvetica font
-        GlobalFontSettings.FontResolver = new CustomFontResolver();
-        XFont font = new XFont("Helvetica", 12, XFontStyleEx.Regular);
-        XBrush brush = XBrushes.Black;
-
-        for (int i = 0; i < totalPages; i++)
-        {
-            PdfPage page = document.Pages[i];
-            // Open the page in append mode for drawing
-            using (XGraphics gfx = XGraphics.FromPdfPage(page, XGraphicsPdfPageOptions.Append))
-            {
-                string text = $"{i + 1} / {totalPages}";
-                XSize size = gfx.MeasureString(text, font);
-                // Centered at the bottom, 20 points from the bottom
-                double pageWidth = page.Width.Point;
-                double pageHeight = page.Height.Point;
-                double x = (pageWidth - size.Width) / 2;
-                double y = pageHeight - 20;
-                gfx.DrawString(text, font, brush, x, y);
-            }
-        }
-    }
-    private void GenerateBookmarks(PdfDocument outputDocument, List<FileMergeInfo> fileInfos)
-    {
-        foreach (var fileInfo in fileInfos)
-        {
-            // Create top-level bookmark (use file name)
-            int firstPageIndex = fileInfo.StartPageNumber - 1;
-            if (firstPageIndex >= 0 && firstPageIndex < outputDocument.PageCount)
-            {
-                var destPage = outputDocument.Pages[firstPageIndex];
-                var fileOutline = outputDocument.Outlines.Add(fileInfo.FileNameWithoutExtension, destPage, false);
-
-                // If the file has original bookmarks, add them as child bookmarks
-                if (fileInfo.OutlineNodes.Any())
-                {
-                    foreach (var rootNode in fileInfo.OutlineNodes)
-                    {
-                        AddOutlineNode(rootNode, fileOutline, fileInfo.StartPageNumber - 1, outputDocument);
-                    }
-                }
-            }
-        }
-    }
+    
     private void ProcessSingleImageFile(MergeContext context, string imagePath, ImageToPdfPageConverter converter
         , CancellationToken cancellationToken = default)
     {
@@ -253,7 +207,7 @@ public class PdfSharpMergeService
 
         int pageCount = inputDocument.PageCount;
 
-        var outlineNodes = ExtractOutlineNodes(inputDocument.Outlines, pageIndexMap);
+        var outlineNodes = _pdfBookmarkBuilder.ExtractOutlineNodes(inputDocument.Outlines, pageIndexMap);
 
         var pages = inputDocument.Pages.Cast<PdfPage>();
         cancellationToken.ThrowIfCancellationRequested();
@@ -337,52 +291,6 @@ public class PdfSharpMergeService
         result.MergedFiles = finalPaths;
         return finalPaths;
     }
-
-    // ---------- Helper Method: Extract Outline Tree ----------
-    private List<OutlineNode> ExtractOutlineNodes(PdfOutlineCollection outlines, Dictionary<PdfPage, int> pageIndexMap)
-    {
-        var list = new List<OutlineNode>();
-        if (outlines == null) return list;
-        foreach (PdfOutline outline in outlines)
-        {
-            list.Add(ExtractOutlineNode(outline, pageIndexMap)); // Pass the mapping
-        }
-        return list;
-    }
-
-    private OutlineNode ExtractOutlineNode(PdfOutline outline, Dictionary<PdfPage, int> pageIndexMap)
-    {
-        var node = new OutlineNode
-        {
-            Title = outline.Title,
-            PageIndex = outline.DestinationPage != null && pageIndexMap.TryGetValue(outline.DestinationPage, out int idx)
-                ? idx
-                : -1
-        };
-        foreach (PdfOutline child in outline.Outlines)
-        {
-            node.Children.Add(ExtractOutlineNode(child, pageIndexMap)); // Recursively pass
-        }
-        return node;
-    }
-
-    // ---------- Helper Method: Add Outline Node to Output Document ----------
-    private void AddOutlineNode(OutlineNode node, PdfOutline parent, int pageOffset, PdfDocument outputDoc)
-    {
-        int destPageIndex = node.PageIndex + pageOffset;
-        if (destPageIndex < 0 || destPageIndex >= outputDoc.PageCount)
-            return; // Skip invalid page numbers
-
-        var destPage = outputDoc.Pages[destPageIndex];
-        // Create outline node (expanded state depends on whether it has child nodes)
-        var newOutline = parent.Outlines.Add(node.Title, destPage, node.Children.Any());
-        // Recursively add child nodes
-        foreach (var child in node.Children)
-        {
-            AddOutlineNode(child, newOutline, pageOffset, outputDoc);
-        }
-    }
-
 }
 
 
