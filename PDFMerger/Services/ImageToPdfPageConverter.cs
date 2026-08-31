@@ -113,7 +113,7 @@ namespace PDFMerger.Services
         }
 
 
-        public void AddImagePageToDocument(
+        public int AddImagePageToDocument(
             string imagePath,
             PdfDocument targetDoc,
             PageSizeMode mode = PageSizeMode.FitImage,
@@ -121,13 +121,7 @@ namespace PDFMerger.Services
             double? customHeight = null)
         {
             ArgumentNullException.ThrowIfNull(targetDoc);
-
-            if (!File.Exists(imagePath))
-            {
-                throw new FileNotFoundException(
-                    "Image file not found",
-                    imagePath);
-            }
+            if (!File.Exists(imagePath)) throw new FileNotFoundException("Image file not found", imagePath);
 
             try
             {
@@ -137,12 +131,13 @@ namespace PDFMerger.Services
                     FileAccess.Read,
                     FileShare.Read);
 
-                AddImageStreamToDocument(
+                int addedPaages =  AddImageStreamToDocument(
                     stream,
                     targetDoc,
                     mode,
                     customWidth,
                     customHeight);
+                return addedPaages;
             }
             catch (Exception)
             {
@@ -155,16 +150,17 @@ namespace PDFMerger.Services
                         $"Failed to process or normalize image file on current OS: {imagePath}");
                 }
 
-                AddImageStreamToDocument(
+                int addedPaages = AddImageStreamToDocument(
                     cleanedStream,
                     targetDoc,
                     mode,
                     customWidth,
                     customHeight);
+                return addedPaages; 
             }
         }
 
-        public void AddImageStreamToDocument(
+        public int AddImageStreamToDocument(
             Stream imageStream,
             PdfDocument targetDoc,
             PageSizeMode mode,
@@ -179,17 +175,17 @@ namespace PDFMerger.Services
             if (image.Frames.Count > 1)
             {
                 AddMultiFrameImageToDocument(image, targetDoc, mode, customWidth, customHeight);
-                return;
+                return image.Frames.Count;
             }
 
-            if (imageStream.CanSeek)                imageStream.Position = 0;
+            if (imageStream.CanSeek) imageStream.Position = 0;
 
             try
             {
                 using var xImage = XImage.FromStream(imageStream);
                 var (pageWidth, pageHeight) = ResolvePageSize(xImage, mode, customWidth, customHeight);
                 AddSingleImagePage(xImage, targetDoc, pageWidth, pageHeight);
-                return;
+                return image.Frames.Count;
             }
             catch { }
 
@@ -207,6 +203,7 @@ namespace PDFMerger.Services
                 targetDoc,
                 normalizedPageSize.width,
                 normalizedPageSize.height);
+            return image.Frames.Count;
         }
 
         private void AddMultiFrameImageToDocument(

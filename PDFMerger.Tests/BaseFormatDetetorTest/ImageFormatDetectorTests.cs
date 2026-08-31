@@ -3,7 +3,7 @@ using PDFMerger.Services;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
-namespace PDFMerger.Tests.Services;
+namespace PDFMerger.Tests.BaseFormatDetetorTest;
 
 
 public class ImageFormatDetectorTests
@@ -82,7 +82,7 @@ public class ImageFormatDetectorTests
     public void Detect_GifHeader_ReturnsGif(string signature)
     {
         // Arrange
-        byte[] data = CreateUtf8Data(signature);
+        var data = CreateUtf8Data(signature);
 
         // Act
         var result = _detector.Detect(new MemoryStream(data));
@@ -264,7 +264,7 @@ public class ImageFormatDetectorTests
     public void Detect_QoiHeader_ReturnsQoi()
     {
         // Arrange
-        byte[] data = CreateUtf8Data("qoif");
+        var data = CreateUtf8Data("qoif");
 
         // Act
         var result = _detector.Detect(new MemoryStream(data));
@@ -283,7 +283,7 @@ public class ImageFormatDetectorTests
     public void Detect_PsdHeader_ReturnsPsd()
     {
         // Arrange
-        byte[] data = CreateUtf8Data("8BPS");
+        var data = CreateUtf8Data("8BPS");
 
         // Act
         var result = _detector.Detect(new MemoryStream(data));
@@ -329,7 +329,7 @@ public class ImageFormatDetectorTests
     public void Detect_AvifBrand_ReturnsAvif(string brand)
     {
         // Arrange
-        byte[] data = CreateIsoBaseMediaHeader(brand);
+        var data = CreateIsoBaseMediaHeader(brand);
 
         // Act
         var result = _detector.Detect(new MemoryStream(data));
@@ -352,7 +352,7 @@ public class ImageFormatDetectorTests
     public void Detect_HeicBrand_ReturnsHeic(string brand)
     {
         // Arrange
-        byte[] data = CreateIsoBaseMediaHeader(brand);
+        var data = CreateIsoBaseMediaHeader(brand);
 
         // Act
         var result = _detector.Detect(new MemoryStream(data));
@@ -373,7 +373,7 @@ public class ImageFormatDetectorTests
     public void Detect_HeifBrand_ReturnsHeif(string brand)
     {
         // Arrange
-        byte[] data = CreateIsoBaseMediaHeader(brand);
+        var data = CreateIsoBaseMediaHeader(brand);
 
         // Act
         var result = _detector.Detect(new MemoryStream(data));
@@ -395,7 +395,7 @@ public class ImageFormatDetectorTests
     public void Detect_SvgHeader_ReturnsSvg(string content)
     {
         // Arrange
-        byte[] data = CreateUtf8Data(content);
+        var data = CreateUtf8Data(content);
 
         // Act
         var result = _detector.Detect(new MemoryStream(data));
@@ -553,7 +553,7 @@ public class ImageFormatDetectorTests
         data[7] = (byte)'p';
 
         // Major brand
-        var brandBytes = System.Text.Encoding.ASCII.GetBytes(brand);
+        var brandBytes = Encoding.ASCII.GetBytes(brand);
 
         Array.Copy(
             brandBytes,

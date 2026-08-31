@@ -1,6 +1,6 @@
 using PdfSharp.Pdf;
 
-namespace PDFMerger.Tests.Services;
+namespace PDFMerger.Tests.BaseFormatDetetorTest;
 public class PdfFormatDetectorTests : IDisposable
 {
     private readonly string _tempDirectory;
@@ -93,7 +93,7 @@ public class PdfFormatDetectorTests : IDisposable
             document.SecuritySettings.OwnerPassword = password;
         }
 
-        for (int i = 0; i < pageCount; i++)
+        for (var i = 0; i < pageCount; i++)
         {
             document.AddPage();
         }

@@ -4,7 +4,7 @@ using PdfSharp.Pdf;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
-namespace PDFMerger.Tests.Services;
+namespace PDFMerger.Tests.BaseFormatDetetorTest;
 
 public sealed class FileInspectionServiceTests : IDisposable
 {

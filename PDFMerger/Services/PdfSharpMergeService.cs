@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using PDFMerger.Contracts;
 using PDFMerger.Infrastructure;
+using PDFMerger.Models;
 using PdfSharp.Drawing;
 using PdfSharp.Fonts;
 using PdfSharp.Pdf;
@@ -26,6 +27,10 @@ public class PdfSharpMergeService
         MergeOptions options,
         CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(filePaths);
+        ArgumentNullException.ThrowIfNull(outputPath);
+        ArgumentNullException.ThrowIfNull(options);
+
         return Task.Run(() => MergeInternal(filePaths, outputPath, options, cancellationToken), cancellationToken);
     }
 
@@ -40,7 +45,7 @@ public class PdfSharpMergeService
 
         try
         {
-            var finalPaths = CheckFilesStatus(filePaths, options, result);
+            var finalPaths = DetermineFinalMergePaths(filePaths, options, result);
 
             using (var outputDocument = new PdfDocument())
             {
@@ -49,14 +54,7 @@ public class PdfSharpMergeService
                 outputDocument.Info.Subject = options.Subject ?? "";
                 outputDocument.Info.Creator = options.Creator ?? "PDFMerger";
 
-                var context = new MergeContext(outputDocument, finalPaths, options)
-                {
-                    // Used to store merge information for each file, only assigned for processed files
-                    FileInfos = new List<FileMergeInfo>(),
-                    TotalPages = 0,
-                    FileIndex = 0
-                };
-
+                var context = new MergeContext(outputDocument, finalPaths, options);
                 var imageConverter = new ImageToPdfPageConverter();
 
                 foreach (var pathName in finalPaths)
@@ -69,7 +67,7 @@ public class PdfSharpMergeService
 
                     if (imageFormatInfo.IsRaster || imageFormatInfo.IsVector)
                     {
-                        ProcessSingleImageDirect(context, pathName, imageConverter);
+                        ProcessSingleImageFile(context, pathName, imageConverter);
                     }
                     else if (string.Equals(ext, ".pdf", StringComparison.OrdinalIgnoreCase))
                     {
@@ -156,12 +154,12 @@ public class PdfSharpMergeService
             Options = options ?? throw new ArgumentNullException(nameof(options));
             FileInfos = new List<FileMergeInfo>();
         }
-        public PdfDocument OutputDocument { get; set; }
-        public List<FileMergeInfo> FileInfos { get; set; }
-        public List<string> FinalPaths { get; set; }
-        public MergeOptions Options { get; set; }
-        public int TotalPages { get; set; }
-        public int FileIndex { get; set; }
+        public PdfDocument OutputDocument { get; }
+        public List<FileMergeInfo> FileInfos { get; }
+        public List<string> FinalPaths { get; }
+        public MergeOptions Options { get; }
+        public int TotalPages { get; set; }= 0;
+        public int FileIndex { get; set; }= 0;
     }
 
     private void AddPageNumbers(PdfDocument document)
@@ -211,34 +209,35 @@ public class PdfSharpMergeService
             }
         }
     }
-    private void ProcessSingleImageDirect(MergeContext context, string imagePath, ImageToPdfPageConverter converter
+    private void ProcessSingleImageFile(MergeContext context, string imagePath, ImageToPdfPageConverter converter
         , CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         int startPage = context.TotalPages + 1;
-        converter.AddImagePageToDocument(imagePath, context.OutputDocument, ImageToPdfPageConverter.PageSizeMode.A4);
+        int addedPages = converter.AddImagePageToDocument(imagePath, context.OutputDocument, ImageToPdfPageConverter.PageSizeMode.A4);
 
         var fileInfo = new FileMergeInfo
         {
             FilePath = imagePath,
             FileNameWithoutExtension = System.IO.Path.GetFileNameWithoutExtension(imagePath),
             StartPageNumber = startPage,
-            PageCount = 1,
+            PageCount = addedPages,
             FileSize = new FileInfo(imagePath).Length,
             OutlineNodes = new List<OutlineNode>()
         };
         context.FileInfos.Add(fileInfo);
 
+        context.TotalPages += addedPages;
         context.Options.Progress?.Report(new MergeProgress
         {
             FileIndex = context.FileIndex,
             TotalFiles = context.FinalPaths.Count,
             FileName = System.IO.Path.GetFileName(imagePath),
-            PageCount = 1,
+            PageCount = addedPages,
             TotalPagesProcessed = context.TotalPages,
             IsComplete = false
         });
 
-        context.TotalPages += 1;
         context.FileIndex++;
     }
 
@@ -253,7 +252,6 @@ public class PdfSharpMergeService
         }
 
         int pageCount = inputDocument.PageCount;
-        int startPage = context.TotalPages + 1; // 1-based
 
         var outlineNodes = ExtractOutlineNodes(inputDocument.Outlines, pageIndexMap);
 
@@ -305,13 +303,13 @@ public class PdfSharpMergeService
         context.TotalPages += pageCount;
         context.FileIndex++;
     }
-    private List<string> CheckFilesStatus(string[] filePaths, MergeOptions options, MergeResult result)
+    private List<string> DetermineFinalMergePaths(string[] filePaths, MergeOptions options, MergeResult result)
     {
         if (filePaths == null || filePaths.Length == 0)
             throw new ArgumentException("Please provide at least one file path.");
 
-        var validPaths = filePaths.Where(File.Exists).ToList();
-        if (!validPaths.Any())
+        var existingPaths = filePaths.Where(File.Exists).ToList();
+        if (!existingPaths.Any())
             throw new FileNotFoundException("No valid PDF or Image files were found.");
 
         List<string> finalPaths;
@@ -321,17 +319,18 @@ public class PdfSharpMergeService
             var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             finalPaths = new List<string>();
             duplicatedFiles = new List<string>();
-            foreach (var p in validPaths)
+            foreach (var p in existingPaths)
             {
-                if (seen.Add(p))
-                    finalPaths.Add(p);
+                var normalizedPath = Path.GetFullPath(p); // Normalize path
+                if (seen.Add(normalizedPath))
+                    finalPaths.Add(normalizedPath);
                 else
-                    duplicatedFiles.Add(p);
+                    duplicatedFiles.Add(normalizedPath);
             }
         }
         else
         {
-            finalPaths = validPaths;
+            finalPaths = existingPaths;
         }
 
         result.DuplicatedFiles = duplicatedFiles ?? new List<string>();
@@ -386,22 +385,4 @@ public class PdfSharpMergeService
 
 }
 
-#region Helper Data Structures
-public class FileMergeInfo
-{
-    public string FilePath { get; set; } = string.Empty;
-    public string FileNameWithoutExtension { get; set; } = string.Empty;
-    public long FileSize { get; set; }
-    public int StartPageNumber { get; set; } // 1-based
-    public int PageCount { get; set; }
-    public List<OutlineNode> OutlineNodes { get; set; } = new List<OutlineNode>();
-}
-
-public class OutlineNode
-{
-    public string Title { get; set; } = string.Empty;
-    public int PageIndex { get; set; } // 0-based within source
-    public List<OutlineNode> Children { get; set; } = new List<OutlineNode>();
-}
-#endregion
 

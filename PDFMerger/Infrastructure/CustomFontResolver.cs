@@ -1,3 +1,4 @@
+//CustomFontResolver.cs
 using System;
 using System.IO;
 using Avalonia.Platform;
@@ -7,11 +8,11 @@ namespace PDFMerger.Infrastructure;
 
 public class CustomFontResolver : IFontResolver
 {
-    private static string localFontFilename = "NotoSans-SemiBold.ttf";
+    private const string localFontFilename = "NotoSans-SemiBold.ttf";
     public FontResolverInfo? ResolveTypeface(string familyName, bool bold, bool italic)
     {
         // here simplify processing: for Helvetica requests, always return the same font file
-        if (familyName == "Helvetica")
+        if (string.Equals(familyName, "Helvetica", StringComparison.OrdinalIgnoreCase))
         {
             return new FontResolverInfo("NotoSans");
         }
@@ -20,24 +21,30 @@ public class CustomFontResolver : IFontResolver
 
     public byte[]? GetFont(string faceName)
     {
-      
-        if (faceName == "NotoSans")
+        if (faceName != "NotoSans") return null;
+
+        try
         {
-            try
-            {
-                var uri = new Uri("avares://PDFMerger/Assets/NotoSans-SemiBold.ttf");
-                using var stream = AssetLoader.Open(uri);
-                var bytes = new byte[stream.Length];
-                stream.Read(bytes, 0, bytes.Length);
-                return bytes;
-            }
-            catch
-            {
-                string fontPath = Path.Combine(AppContext.BaseDirectory, "Assets", localFontFilename);
-                if (File.Exists(fontPath))
-                    return File.ReadAllBytes(fontPath);
-            }
+            var uri = new Uri($"avares://PDFMerger/Assets/{localFontFilename}");
+            using var stream = AssetLoader.Open(uri);
+            using var memoryStream = new MemoryStream();
+            stream.CopyTo(memoryStream);
+            return memoryStream.ToArray();
         }
+        catch
+        {
+            string fontPath = Path.Combine(AppContext.BaseDirectory, "Assets", localFontFilename);
+            if (File.Exists(fontPath))
+                return File.ReadAllBytes(fontPath);
+        }
+
         return null;
+    }
+}
+public static class PdfSharpInitializer
+{
+    public static void Initialize()
+    {
+        GlobalFontSettings.FontResolver = new CustomFontResolver();
     }
 }

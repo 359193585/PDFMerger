@@ -3,7 +3,7 @@ using PdfSharp.Pdf;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
-namespace PDFMerger.Tests.Services;
+namespace PDFMerger.Tests.BaseFormatDetetorTest;
 public sealed class MultiFrameImageToPdfServiceTests
 {
     [Fact]
@@ -22,7 +22,7 @@ public sealed class MultiFrameImageToPdfServiceTests
 
         using var image = new Image<Rgba32>(100, 100);
 
-        int frameCount = service.GetFrameCount(image);
+        var frameCount = service.GetFrameCount(image);
 
         Assert.Equal(1, frameCount);
     }
@@ -37,7 +37,7 @@ public sealed class MultiFrameImageToPdfServiceTests
         image.Frames.AddFrame(image.Frames.RootFrame);
         image.Frames.AddFrame(image.Frames.RootFrame);
 
-        int frameCount = service.GetFrameCount(image);
+        var frameCount = service.GetFrameCount(image);
 
         Assert.Equal(3, frameCount);
     }

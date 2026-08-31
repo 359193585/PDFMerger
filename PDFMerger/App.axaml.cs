@@ -10,6 +10,7 @@ using Avalonia.Markup.Xaml;
 using Avalonia.Platform;
 using PDFMerger.Infrastructure;
 using PDFMerger.Views;
+using PdfSharp.Fonts;
 
 namespace PDFMerger
 {
@@ -25,6 +26,7 @@ namespace PDFMerger
             // register the JSON plugin and set the default language to English
             var culture = GetInitialCulture().Name;            // default "en-US"
             I18n.Initialize(culture);
+            PdfSharpInitializer.Initialize();
 
             if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {
@@ -48,7 +50,7 @@ namespace PDFMerger
             using var stream = AssetLoader.Open(uri);
             return new WindowIcon(stream);
         }
-        private  async void OnAboutClick(object? sender, EventArgs e)
+        private async void OnAboutClick(object? sender, EventArgs e)
         {
             await ShowAboutDialogAsync();
         }
