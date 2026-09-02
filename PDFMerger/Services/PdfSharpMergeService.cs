@@ -6,9 +6,9 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using PDFMerger.Contracts;
 using PDFMerger.Infrastructure;
 using PDFMerger.Models;
+using PdfSharp.Drawing;
 using PdfSharp.Pdf;
 using PdfSharp.Pdf.IO;
 
@@ -96,7 +96,7 @@ public class PdfSharpMergeService
                 // After all pages are added, check if page numbers need to be added
                 if (options.AddPageNumbers && result.TotalPages > 0)
                 {
-                    _pdfPageNumberService.AddPageNumbers(outputDocument);
+                    _pdfPageNumberService.AddPageNumbers(outputDocument, PdfPageNumberService.PageNumberStyle.Pill,XColors.AntiqueWhite);
                 }
 
                 cancellationToken.ThrowIfCancellationRequested();
@@ -168,7 +168,7 @@ public class PdfSharpMergeService
     {
         cancellationToken.ThrowIfCancellationRequested();
         int startPage = context.TotalPages + 1;
-        int addedPages = converter.AddImagePageToDocument(imagePath, context.OutputDocument, ImageToPdfPageConverter.PageSizeMode.A4);
+        int addedPages = converter.AddImagePageToDocument(imagePath, context.OutputDocument, ImageToPdfPageConverter.PageSizeMode.FitImage);
 
         var fileInfo = new FileMergeInfo
         {
