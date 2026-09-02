@@ -2,8 +2,9 @@
 
 using System;
 using System.Threading;
+using PDFMerger.Contracts;
 
-namespace PDFMerger.Contracts;
+namespace PDFMerger.Models;
 public class MergeOptions
 {
     public bool IgnoreDuplicates { get; set; } = true;

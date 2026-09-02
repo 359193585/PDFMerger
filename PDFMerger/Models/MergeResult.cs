@@ -1,8 +1,9 @@
 //MergeResult.cs
 
 using System.Collections.Generic;
+using PDFMerger.Contracts;
 
-namespace PDFMerger.Contracts;
+namespace PDFMerger.Models;
 /// <summary>
 /// merge result information, used to report the result of merging multiple PDF files.
 /// </summary>
