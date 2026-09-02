@@ -9,7 +9,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using Avalonia.Controls;
-using PDFMerger.Contracts;
 using PDFMerger.Infrastructure;
 using PDFMerger.Models;
 using PDFMerger.Services;
