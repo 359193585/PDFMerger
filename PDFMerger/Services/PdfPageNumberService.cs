@@ -1,186 +1,311 @@
 using System;
 using PdfSharp.Drawing;
-using PdfSharp.Fonts;
 using PdfSharp.Pdf;
-using PDFMerger.Infrastructure;
 
 namespace PDFMerger.Services;
 public sealed class PdfPageNumberService
 {
-    // PDF uses points. 1 inch = 72 points.
-    // 96 DPI is used as the reference when defining the desired
-    // visual size in pixels.
-    private const double Dpi = 96.0;
-
-    // Desired page-number size range, expressed in pixels.
-    private const double MinFontSizePixels = 8.0;
-    private const double MaxFontSizePixels = 16.0;
-
-    // Font size is calculated from the shortest page dimension.
-    // This prevents very large pages from producing excessively
-    // large page numbers.
+    private const double MinFontSize = 8;
+    private const double MaxFontSize = 48;
     private const double FontSizeRatio = 0.035;
 
-    // Distance from the bottom edge, relative to the font size.
+    // Distance from the bottom edge, relative to font size.
     private const double BottomMarginRatio = 1.5;
 
-    // Minimum horizontal margin, expressed in multiples of font size.
+    // Minimum horizontal safe margin, relative to font size.
     private const double HorizontalMarginRatio = 1.0;
+
+    // Underline dimensions.
+    private const double UnderlineThicknessRatio = 0.08;
+    private const double UnderlineOffsetRatio = 0.15;
+
+    // Pill dimensions.
+    private const double PillHorizontalPaddingRatio = 0.65;
+    private const double PillVerticalPaddingRatio = 0.35;
 
     private const string FontName = "Helvetica";
 
-    /// <summary>
-    /// Adds page numbers to all pages of the specified PDF document.
-    /// </summary>
-    /// <param name="document">The PDF document to modify.</param>
     public void AddPageNumbers(PdfDocument document)
+    {
+        AddPageNumbers(document, PageNumberStyle.Plain, XColors.Black);
+    }
+
+    public void AddPageNumbers(PdfDocument document, PageNumberStyle style, XColor color)
     {
         ArgumentNullException.ThrowIfNull(document);
 
         int totalPages = document.PageCount;
-
-        if (totalPages == 0)
-        {
-            return;
-        }
-
-        GlobalFontSettings.FontResolver = new CustomFontResolver();
+        if (totalPages == 0) return;
 
         for (int i = 0; i < totalPages; i++)
         {
             PdfPage page = document.Pages[i];
 
-            if (page.Width.Point <= 0 || page.Height.Point <= 0)
-            {
-                continue;
-            }
+            double pageWidth = page.Width.Point;
+            double pageHeight = page.Height.Point;
+
+            if (pageWidth <= 0 || pageHeight <= 0) continue;
 
             string text = $"{i + 1} / {totalPages}";
 
-            using XGraphics gfx = XGraphics.FromPdfPage(
-                page,
-                XGraphicsPdfPageOptions.Append);
+            using XGraphics gfx = XGraphics.FromPdfPage(page, XGraphicsPdfPageOptions.Append);
 
             double fontSize = CalculateFontSize(page);
 
-            XFont font = new XFont(
-                FontName,
-                fontSize,
-                XFontStyleEx.Regular);
+            XFont font = new XFont(FontName, fontSize, XFontStyleEx.Regular);
 
-            // Ensure the page-number text actually fits on the page.
-            fontSize = AdjustFontSizeToFit(
-                gfx,
-                text,
-                font,
-                fontSize,
-                page.Width.Point);
+            // Ensure the complete page-number element fits within the page.
+            fontSize = AdjustFontSizeToFit(gfx, text, font, fontSize, pageWidth, style);
 
-            // The font may have been reduced, so recreate it.
             if (Math.Abs(fontSize - font.Size) > 0.01)
             {
-                font = new XFont(
-                    FontName,
-                    fontSize,
-                    XFontStyleEx.Regular);
+                font = new XFont(FontName, fontSize, XFontStyleEx.Regular);
             }
 
             XSize textSize = gfx.MeasureString(text, font);
 
-            double horizontalMargin = fontSize * HorizontalMarginRatio;
+            PageNumberLayout layout = CalculateLayout(
+                pageWidth,
+                pageHeight,
+                textSize,
+                fontSize,
+                style);
 
-            double x = (page.Width.Point - textSize.Width) / 2;
-
-            // Keep the text above the bottom edge while maintaining
-            // a reasonable visual distance from it.
-            double bottomMargin = fontSize * BottomMarginRatio;
-            double y = page.Height.Point - bottomMargin;
-
-            // Protect against extremely small pages.
-            x = Math.Max(horizontalMargin, x);
-            y = Math.Max(textSize.Height, y);
-
-            // If the page is too small to satisfy the ideal margins,
-            // center the text vertically within the available lower area.
-            if (x + textSize.Width > page.Width.Point)
-            {
-                x = Math.Max(
-                    0,
-                    (page.Width.Point - textSize.Width) / 2);
-            }
-
-            gfx.DrawString(
+            DrawPageNumber(
+                gfx,
                 text,
                 font,
-                XBrushes.Black,
-                x,
-                y);
+                color,
+                style,
+                layout);
         }
     }
 
-    /// <summary>
-    /// Calculates a font size based on the shortest page dimension.
-    /// </summary>
     private static double CalculateFontSize(PdfPage page)
     {
-        double shortSide = Math.Min(
-            page.Width.Point,
-            page.Height.Point);
+        double shortSide = Math.Min(page.Width.Point, page.Height.Point);
+        double fontSize = shortSide * FontSizeRatio;
 
-        double calculatedSize = shortSide * FontSizeRatio;
-
-        double minFontSize = PixelsToPoints(MinFontSizePixels);
-        double maxFontSize = PixelsToPoints(MaxFontSizePixels);
-
-        return Math.Clamp(
-            calculatedSize,
-            minFontSize,
-            maxFontSize);
+        return Math.Clamp(fontSize, MinFontSize, MaxFontSize);
     }
 
-    /// <summary>
-    /// Reduces the font size if the page-number text is too wide
-    /// for the current page.
-    /// </summary>
     private static double AdjustFontSizeToFit(
         XGraphics graphics,
         string text,
         XFont font,
         double fontSize,
-        double pageWidth)
+        double pageWidth,
+        PageNumberStyle style)
     {
-        double minFontSize = PixelsToPoints(MinFontSizePixels);
+        XSize textSize = graphics.MeasureString(text, font);
+
         double horizontalMargin = fontSize * HorizontalMarginRatio;
-        double availableWidth = pageWidth - horizontalMargin * 2;
 
-        if (availableWidth <= 0)
-        {
-            return minFontSize;
-        }
+        double requiredWidth = CalculateRequiredWidth(
+            textSize.Width,
+            fontSize,
+            style);
 
-        XSize size = graphics.MeasureString(text, font);
+        double availableWidth = Math.Max(
+            0,
+            pageWidth - horizontalMargin * 2);
 
-        if (size.Width <= availableWidth)
-        {
-            return fontSize;
-        }
+        if (requiredWidth <= availableWidth) return fontSize;
 
-        // Font width is approximately proportional to font size,
-        // so calculate a first estimate instead of repeatedly
-        // reducing the font one step at a time.
-        double adjustedSize =
-            fontSize * availableWidth / size.Width;
+        double scale = availableWidth / requiredWidth;
 
-        return Math.Max(
-            minFontSize,
-            adjustedSize);
+        return Math.Max(MinFontSize, fontSize * scale);
     }
 
-    /// <summary>
-    /// Converts a reference pixel size at 96 DPI to PDF points.
-    /// </summary>
-    private static double PixelsToPoints(double pixels)
+    private static double CalculateRequiredWidth(
+        double textWidth,
+        double fontSize,
+        PageNumberStyle style)
     {
-        return pixels * 72.0 / Dpi;
+        return style switch
+        {
+            PageNumberStyle.Plain =>
+                textWidth,
+
+            PageNumberStyle.Underline =>
+                textWidth,
+
+            PageNumberStyle.Pill =>
+                textWidth + fontSize * PillHorizontalPaddingRatio * 2,
+
+            _ => throw new ArgumentOutOfRangeException(nameof(style), style, null)
+        };
+    }
+
+    private static PageNumberLayout CalculateLayout(
+        double pageWidth,
+        double pageHeight,
+        XSize textSize,
+        double fontSize,
+        PageNumberStyle style)
+    {
+        double horizontalMargin = fontSize * HorizontalMarginRatio;
+
+        double elementWidth = CalculateRequiredWidth(
+            textSize.Width,
+            fontSize,
+            style);
+
+        double elementHeight = CalculateElementHeight(
+            textSize.Height,
+            fontSize,
+            style);
+
+        // Keep the entire element horizontally inside the page.
+        double elementX = (pageWidth - elementWidth) / 2;
+
+        elementX = Math.Clamp(
+            elementX,
+            0,
+            Math.Max(0, pageWidth - elementWidth));
+
+        // Leave a proportional distance from the bottom.
+        double bottomMargin = fontSize * BottomMarginRatio;
+
+        double elementY = pageHeight - bottomMargin - elementHeight;
+
+        // If the page is too small, move the element as close
+        // to the bottom edge as possible without clipping it.
+        elementY = Math.Clamp(
+            elementY,
+            0,
+            Math.Max(0, pageHeight - elementHeight));
+
+        double textX = elementX;
+
+        double textY = elementY + textSize.Height;
+
+        if (style == PageNumberStyle.Pill)
+        {
+            double paddingX = fontSize * PillHorizontalPaddingRatio;
+            double paddingY = fontSize * PillVerticalPaddingRatio;
+
+            textX = elementX + paddingX;
+            textY = elementY + paddingY + textSize.Height;
+        }
+
+        return new PageNumberLayout
+        {
+            ElementX = elementX,
+            ElementY = elementY,
+            ElementWidth = elementWidth,
+            ElementHeight = elementHeight,
+            TextX = textX,
+            TextY = textY
+        };
+    }
+
+    private static double CalculateElementHeight(
+        double textHeight,
+        double fontSize,
+        PageNumberStyle style)
+    {
+        return style switch
+        {
+            PageNumberStyle.Plain =>
+                textHeight,
+
+            PageNumberStyle.Underline =>
+                textHeight + fontSize * UnderlineOffsetRatio,
+
+            PageNumberStyle.Pill =>
+                textHeight + fontSize * PillVerticalPaddingRatio * 2,
+
+            _ => throw new ArgumentOutOfRangeException(nameof(style), style, null)
+        };
+    }
+
+    private static void DrawPageNumber(
+        XGraphics graphics,
+        string text,
+        XFont font,
+        XColor color,
+        PageNumberStyle style,
+        PageNumberLayout layout)
+    {
+        switch (style)
+        {
+            case PageNumberStyle.Plain:
+                graphics.DrawString(
+                    text,
+                    font,
+                    XBrushes.Black,
+                    layout.TextX,
+                    layout.TextY);
+                break;
+
+            case PageNumberStyle.Underline:
+                graphics.DrawString(
+                    text,
+                    font,
+                    XBrushes.Black,
+                    layout.TextX,
+                    layout.TextY);
+
+                double underlineThickness = Math.Max(
+                    0.8,
+                    font.Size * UnderlineThicknessRatio);
+
+                double underlineY =
+                    layout.TextY + font.Size * UnderlineOffsetRatio;
+
+                var pen = new XPen(color, underlineThickness);
+
+                graphics.DrawLine(
+                    pen,
+                    layout.TextX,
+                    underlineY,
+                    layout.TextX + layout.ElementWidth,
+                    underlineY);
+
+                break;
+
+            case PageNumberStyle.Pill:
+                double radius = layout.ElementHeight / 2;
+
+                var brush = new XSolidBrush(color);
+
+                graphics.DrawRoundedRectangle(
+                    brush,
+                    layout.ElementX,
+                    layout.ElementY,
+                    layout.ElementWidth,
+                    layout.ElementHeight,
+                    radius,
+                    radius);
+
+                graphics.DrawString(
+                    text,
+                    font,
+                    XBrushes.Black,
+                    layout.TextX,
+                    layout.TextY);
+
+                break;
+
+            default:
+                throw new ArgumentOutOfRangeException(nameof(style), style, null);
+        }
+    }
+
+    private sealed class PageNumberLayout
+    {
+        public double ElementX { get; init; }
+        public double ElementY { get; init; }
+        public double ElementWidth { get; init; }
+        public double ElementHeight { get; init; }
+        public double TextX { get; init; }
+        public double TextY { get; init; }
+    }
+    public enum PageNumberStyle
+    {
+        Plain,
+        Underline,
+        Pill
     }
 }
