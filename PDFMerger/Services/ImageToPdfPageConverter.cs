@@ -24,6 +24,7 @@ namespace PDFMerger.Services
             Custom
         }
 
+        // Keep the original maximum dimension limitation for fallback normalization.
         private const int MAX_IMAGE_DIMENSION = 2560;
 
         private readonly MultiFrameImageToPdfService _multiFrameImageToPdfService;
@@ -101,14 +102,7 @@ namespace PDFMerger.Services
             double? customHeight = null)
         {
             var targetDoc = new PdfDocument();
-
-            AddImageStreamToDocument(
-                imageStream,
-                targetDoc,
-                mode,
-                customWidth,
-                customHeight);
-
+            AddImageStreamToDocument(imageStream, targetDoc, mode, customWidth, customHeight);
             return targetDoc;
         }
 
@@ -123,41 +117,9 @@ namespace PDFMerger.Services
             ArgumentNullException.ThrowIfNull(targetDoc);
             if (!File.Exists(imagePath)) throw new FileNotFoundException("Image file not found", imagePath);
 
-            try
-            {
-                using var stream = new FileStream(
-                    imagePath,
-                    FileMode.Open,
-                    FileAccess.Read,
-                    FileShare.Read);
-
-                int addedPaages =  AddImageStreamToDocument(
-                    stream,
-                    targetDoc,
-                    mode,
-                    customWidth,
-                    customHeight);
-                return addedPaages;
-            }
-            catch (Exception)
-            {
-                using var cleanedStream =
-                    CleanAndNormalizeImage(imagePath);
-
-                if (cleanedStream == null)
-                {
-                    throw new InvalidOperationException(
-                        $"Failed to process or normalize image file on current OS: {imagePath}");
-                }
-
-                int addedPaages = AddImageStreamToDocument(
-                    cleanedStream,
-                    targetDoc,
-                    mode,
-                    customWidth,
-                    customHeight);
-                return addedPaages; 
-            }
+            using var stream = new FileStream(imagePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+            int addedPages = AddImageStreamToDocument(stream, targetDoc, mode, customWidth, customHeight);
+            return addedPages;
         }
 
         public int AddImageStreamToDocument(
@@ -167,9 +129,9 @@ namespace PDFMerger.Services
             double? customWidth = null,
             double? customHeight = null)
         {
+            ArgumentNullException.ThrowIfNull(targetDoc);
             if (imageStream == null || !imageStream.CanRead)
                 throw new ArgumentException("Invalid image stream", nameof(imageStream));
-            ArgumentNullException.ThrowIfNull(targetDoc);
 
             using var image = LoadImageSharpImage(imageStream);
             if (image.Frames.Count > 1)
@@ -178,32 +140,39 @@ namespace PDFMerger.Services
                 return image.Frames.Count;
             }
 
-            if (imageStream.CanSeek) imageStream.Position = 0;
 
+            // For single-frame images, we can use PdfSharp's XImage directly.
+            XImage? xImage = null;
+            MemoryStream? normalizedStream = null;
             try
             {
-                using var xImage = XImage.FromStream(imageStream);
-                var (pageWidth, pageHeight) = ResolvePageSize(xImage, mode, customWidth, customHeight);
-                AddSingleImagePage(xImage, targetDoc, pageWidth, pageHeight);
-                return image.Frames.Count;
+                if (imageStream.CanSeek) imageStream.Position = 0;
+                xImage = XImage.FromStream(imageStream);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                try
+                {
+                    // if XImage.FromStream fails, we normalize the image and convert it to PNG format.
+                    normalizedStream = NormalizeImageToPng(image);
+                    xImage = XImage.FromStream(normalizedStream);
+                }
+                catch (Exception fallbackEx)
+                {
+                    throw new InvalidOperationException(
+                        "Failed to load the image directly and also failed after normalization to PNG.",
+                        new AggregateException(ex, fallbackEx));
+                }
+            }
 
-            using var normalizedStream = ConvertImageToPngStream(image);
-            using var normalizedXImage = XImage.FromStream(normalizedStream);
-            var normalizedPageSize =
-                ResolvePageSize(
-                    normalizedXImage,
-                    mode,
-                    customWidth,
-                    customHeight);
+            using (xImage)
+            using (normalizedStream)
+            {
+                var pageSize = ResolvePageSize(xImage, mode, customWidth, customHeight);
+                AddSingleImagePage(xImage, targetDoc, pageSize.width, pageSize.height);
+            }
 
-            AddSingleImagePage(
-                normalizedXImage,
-                targetDoc,
-                normalizedPageSize.width,
-                normalizedPageSize.height);
-            return image.Frames.Count;
+            return image.Frames.Count; 
         }
 
         private void AddMultiFrameImageToDocument(
@@ -425,50 +394,29 @@ namespace PDFMerger.Services
                 drawHeight);
         }
 
-        private MemoryStream? CleanAndNormalizeImage(
-            string imagePath)
+        private static MemoryStream NormalizeImageToPng(Image image)
         {
-            try
+            // Keep the original EXIF orientation handling.
+            image.Mutate(x => x.AutoOrient());
+
+            // Keep the original maximum dimension limitation.
+            if (image.Width > MAX_IMAGE_DIMENSION || image.Height > MAX_IMAGE_DIMENSION)
             {
-                using var image = Image.Load<Rgba32>(imagePath);
-
-                // Keep the original EXIF orientation handling.
-                image.Mutate(x => x.AutoOrient());
-
-                // Keep the original maximum dimension limitation.
-                if (image.Width > MAX_IMAGE_DIMENSION ||
-                    image.Height > MAX_IMAGE_DIMENSION)
-                {
-                    image.Mutate(x =>
-                        x.Resize(new ResizeOptions
-                        {
-                            Mode = ResizeMode.Max,
-                            Size = new Size(
-                                MAX_IMAGE_DIMENSION,
-                                MAX_IMAGE_DIMENSION)
-                        }));
-                }
-
-                if (image.Frames.Count > 1)
-                {
-                    using var firstFrame = image.Frames.CloneFrame(0);
-                    return ConvertImageToPngStream(firstFrame);
-                }
-
-                return ConvertImageToPngStream(image);
+                image.Mutate(x =>
+                    x.Resize(new ResizeOptions
+                    {
+                        Mode = ResizeMode.Max,
+                        Size = new Size(
+                            MAX_IMAGE_DIMENSION,
+                            MAX_IMAGE_DIMENSION)
+                    }));
             }
-            catch
-            {
-                return null;
-            }
-        }
 
-        private static MemoryStream ConvertImageToPngStream(Image image)
-        {
             var stream = new MemoryStream();
             image.Save(stream, new PngEncoder());
             stream.Position = 0;
             return stream;
         }
+
     }
 }
