@@ -14,11 +14,28 @@ using PdfSharp.Pdf.IO;
 
 namespace PDFMerger.Services;
 
+
 /// <summary>
 /// PDF merging service implemented with PDFsharp, supporting retention of original bookmarks and using file names as first-level directories
 /// </summary>
 public class PdfSharpMergeService
 {
+    private readonly PdfBookmarkBuilder _pdfBookmarkBuilder;
+    private readonly PdfPageNumberService _pdfPageNumberService;
+    private readonly ImageToPdfPageConverter _imageConverter;
+    private readonly ImageFormatDetector _imageFormatDetector;
+    public PdfSharpMergeService(
+        PdfBookmarkBuilder? pdfBookmarkBuilder = null,
+        PdfPageNumberService? pdfPageNumberService = null,
+        ImageToPdfPageConverter? imageConverter = null,
+        ImageFormatDetector? imageFormatDetector = null)
+    {
+        _pdfBookmarkBuilder = pdfBookmarkBuilder ?? new PdfBookmarkBuilder();
+        _pdfPageNumberService = pdfPageNumberService ?? new PdfPageNumberService();
+        _imageConverter = imageConverter ?? new ImageToPdfPageConverter();
+        _imageFormatDetector = imageFormatDetector ?? new ImageFormatDetector();
+    }
+
     public Task<MergeResult> MergeAsync(
         string[] filePaths,
         string outputPath,
@@ -53,19 +70,18 @@ public class PdfSharpMergeService
                 outputDocument.Info.Creator = options.Creator ?? "PDFMerger";
 
                 var context = new MergeContext(outputDocument, finalPaths, options);
-                var imageConverter = new ImageToPdfPageConverter();
 
                 foreach (var pathName in finalPaths)
                 {
                     currentFilePath = pathName;
                     cancellationToken.ThrowIfCancellationRequested();
 
-                    ImageFormatInfo imageFormatInfo = new ImageFormatDetector().Detect(pathName);
+                    var imageFormatInfo = _imageFormatDetector.Detect(pathName);
                     string ext = System.IO.Path.GetExtension(pathName).ToLowerInvariant();
 
                     if (imageFormatInfo.IsRaster || imageFormatInfo.IsVector)
                     {
-                        ProcessSingleImageFile(context, pathName, imageConverter, cancellationToken);
+                        ProcessSingleImageFile(context, pathName, _imageConverter, cancellationToken);
                     }
                     else if (string.Equals(ext, ".pdf", StringComparison.OrdinalIgnoreCase))
                     {
@@ -123,8 +139,6 @@ public class PdfSharpMergeService
         }
     }
 
-    private PdfBookmarkBuilder _pdfBookmarkBuilder = new PdfBookmarkBuilder();
-    private PdfPageNumberService _pdfPageNumberService = new PdfPageNumberService();
     private void TryDeleteIncompleteOutputFile(string path)
     {
         if (string.IsNullOrEmpty(path) || !File.Exists(path))

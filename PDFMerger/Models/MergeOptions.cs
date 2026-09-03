@@ -11,8 +11,8 @@ public class MergeOptions
 
     public string? Author { get; set; }
     public string? Title { get; set; }
-    public string? Subject { get; set; } = "";
-    public string? Creator { get; set; } = "";
+    public string? Subject { get; set; } 
+    public string? Creator { get; set; } 
 
     public IBookmarkGenerator? BookmarkGenerator { get; set; }
 

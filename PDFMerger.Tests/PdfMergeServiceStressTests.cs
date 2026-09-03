@@ -2,7 +2,8 @@ using System.Text;
 using PDFMerger.Models;
 using PDFMerger.Services;
 
-namespace PDFMerger.Tests;
+namespace PDFMerger.Tests.StressTest;
+    
 public class PdfMergeServiceStressTests : IDisposable
 {
     private readonly PdfSharpMergeService _pdfMergeService;
