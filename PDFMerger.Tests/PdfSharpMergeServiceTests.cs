@@ -359,7 +359,7 @@ public class PdfSharpMergeServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task MergeAsync_UnsupportedFile_CurrentlyReturnsSuccess()
+    public async Task MergeAsync_UnsupportedFile_ReturnFalse()
     {
         var textFile = Path.Combine(
             _testDirectory,
