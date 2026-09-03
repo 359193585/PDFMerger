@@ -1,11 +1,6 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
+using PDFMerger.Models;
 using PDFMerger.Services;
-using PDFMerger.Contracts;
-using PdfSharp.Pdf;
 
 namespace PDFMerger.Tests;
 public class PdfMergeServiceStressTests : IDisposable

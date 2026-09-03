@@ -1,8 +1,8 @@
-using PDFMerger.Contracts;
+using PDFMerger.Models;
 using PDFMerger.Services;
 using PdfSharp.Pdf;
 
-namespace PDFMerger.Tests;
+namespace PDFMerger.Tests.Services;
 
 public class PdfMergeServiceTests : IDisposable
 {
@@ -57,27 +57,19 @@ public class PdfMergeServiceTests : IDisposable
 
         using var cts = new CancellationTokenSource();
 
-        // Act & Assert
-        // 1. 发起异步合并任务
         var mergeTask = _pdfMergeService.MergeAsync(
             new[] { input1, input2 },
             outputPath,
             new MergeOptions(),
             cts.Token);
 
-        // 2. 模拟中途发出 Cancel 指令
         cts.Cancel();
 
-        // 3. 验证方法是否向上抛出了 OperationCanceledException
         await Assert.ThrowsAsync<OperationCanceledException>(async () => await mergeTask);
 
-        // 4. 核心断言：物理磁盘上绝对不能残留任何文件
         Assert.False(File.Exists(outputPath), "取消操作后，未合并完成的输出文件必须被自动清理剔除。");
     }
 
-    /// <summary>
-    /// 测试无效输入：验证文件不存在时的错误捕获。
-    /// </summary>
     [Fact]
     public async Task MergeAsync_FileNotFound_ReturnsFailureResult()
     {
