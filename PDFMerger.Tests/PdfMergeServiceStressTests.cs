@@ -20,7 +20,7 @@ public class PdfMergeServiceStressTests : IDisposable
         Directory.CreateDirectory(_testDirectory);
     }
 
-    #region  专门制造 PDFsharp parser 边界/bug 测试数据
+    #region  Specially generate PDFsharp parser boundary/bug test data
     [Theory]
     [InlineData(1L)]
     //[InlineData(2L)]
@@ -57,7 +57,7 @@ public class PdfMergeServiceStressTests : IDisposable
     #endregion
 
 
-    #region  使用有内容的大图片创建多页真实pdf测试数据
+    #region Create multi-page realistic PDF test data using large images with content
     [Fact]
     public void RealImagePdfGenerator_CreatesLargeMultiPagePdf()
     {

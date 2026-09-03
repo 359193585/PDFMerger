@@ -69,9 +69,7 @@ public static class RealImagePdfGenerator
 
         try
         {
-            for (int pageNumber = 1;
-                 pageNumber <= pageCount;
-                 pageNumber++)
+            for (int pageNumber = 1; pageNumber <= pageCount; pageNumber++)
             {
                 string imagePath = Path.Combine(
                     temporaryDirectory,
@@ -207,7 +205,6 @@ public static class RealImagePdfGenerator
         }
         catch
         {
-            // Test cleanup should not hide the original test failure.
         }
     }
 
@@ -224,7 +221,6 @@ public static class RealImagePdfGenerator
         }
         catch
         {
-            // Test cleanup should not hide the original test failure.
         }
     }
 }
