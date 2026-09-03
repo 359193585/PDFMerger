@@ -14,17 +14,55 @@ namespace PDFMerger.Services
 
         public static async Task<string?> GetLatestVersionAsync()
         {
-            var url = $"https://api.github.com/repos/{RepoOwner}/{RepoName}/releases/latest";
-            using var client = new HttpClient();
-            client.DefaultRequestHeaders.UserAgent.ParseAdd("PDFMerger");
-            var response = await client.GetAsync(url);
-            if (!response.IsSuccessStatusCode) return null;
-            var json = await response.Content.ReadAsStringAsync();
-            using var doc = JsonDocument.Parse(json);
-            var tag = doc.RootElement.GetProperty("tag_name").GetString();
-            return tag?.TrimStart('v');
+            try
+            {
+                var url = $"https://api.github.com/repos/{RepoOwner}/{RepoName}/releases/latest";
+                using var client = new HttpClient();
+                client.DefaultRequestHeaders.UserAgent.ParseAdd(RepoName);
+                return await GetLatestVersionAsync(client);
+            }
+            catch
+            {
+                return null;
+            }
         }
 
+        public static async Task<string?> GetLatestVersionAsync(HttpClient client)
+        {
+            try
+            {
+                var url = $"https://api.github.com/repos/{RepoOwner}/{RepoName}/releases/latest";
+                var response = await client.GetAsync(url);
+                if (!response.IsSuccessStatusCode) return null;
+                var json = await response.Content.ReadAsStringAsync();
+
+                using var doc = JsonDocument.Parse(json);
+                if (!doc.RootElement.TryGetProperty("tag_name", out var tagElement)) return null;
+                var tag = tagElement.GetString()?.TrimStart('v');
+                if (!IsValidVersion(tag)) return null;
+
+                return tag;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+        private static bool IsValidVersion(string? version)
+        {
+            if (string.IsNullOrWhiteSpace(version))
+                return false;
+
+            var parts = version.Split('.');
+
+            return parts.Length == 3 &&
+                   int.TryParse(parts[0], out var major) &&
+                   int.TryParse(parts[1], out var minor) &&
+                   int.TryParse(parts[2], out var patch) &&
+                   major >= 0 &&
+                   minor >= 0 &&
+                   patch >= 0;
+        }
         public static string GetCurrentVersion()
         {
             var version = Assembly.GetExecutingAssembly().GetName().Version;
@@ -38,7 +76,7 @@ namespace PDFMerger.Services
             var v2 = new Version(current);
             return v1.CompareTo(v2);
         }
-
+       
         public static void OpenDownloadPage()
         {
             var url = $"https://github.com/{RepoOwner}/{RepoName}/releases/latest";
