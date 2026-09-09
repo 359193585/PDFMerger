@@ -1,9 +1,6 @@
-using System.Text;
 using PDFMerger.Models;
 using PDFMerger.Services;
 using PDFMerger.Tests.TestData;
-using PdfSharp.Drawing;
-using PdfSharp.Pdf;
 using PdfSharp.Pdf.IO;
 
 namespace PDFMerger.Tests.StressTest;
