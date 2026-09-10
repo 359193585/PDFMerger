@@ -30,6 +30,7 @@
     "Status_ListLoaded": "Loaded {0} file(s)",
     "Status_ListEmpty": "List is empty",
     "Status_Cleared": "List cleared",
+    "Status_SkippedFile": "Skipped unsupported file: {0}",
     "Status_IgnoreDuplicateFiles": "⚠️ Ignored duplicate files: {0}",
     "Status_MergePreparing": "Preparing to merge...",
     "Status_MergeProgress": "📄 Merging [{0}/{1}]: {2} ({3} page(s))",
@@ -48,5 +49,8 @@
     "DataGrid_Column_FileName": "File Name",
     "DataGrid_Column_PageCount": "Pages",
     "DataGrid_Column_FileSize": "File Size",
-    "DataGrid_Column_Author": "Author"
+    "DataGrid_Column_Author": "Author",
+    "Message_UnsupportedFile": "❌ Unsupported file type: {0}",
+    "Message_InputPasswd": "Please enter the password for the encrypted document \"{0}\":",
+    "Message_EncryptWarning": "⚠️ After merging, the encrypted document will lose its protection. Please ensure information security."
 }

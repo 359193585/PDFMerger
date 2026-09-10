@@ -30,6 +30,7 @@
     "Status_ListLoaded": "{0} Dateien geladen",
     "Status_ListEmpty": "Liste ist leer",
     "Status_Cleared": "Liste geleert",
+    "Status_SkippedFile": "Nicht unterstützte Datei übersprungen: {0}",
     "Status_IgnoreDuplicateFiles": "⚠️ Doppelte Dateien ignoriert: {0}",
     "Status_MergePreparing": "Zusammenführung wird vorbereitet...",
     "Status_MergeProgress": "📄 Zusammenführen [{0}/{1}]: {2} ({3} Seiten)",
@@ -48,5 +49,8 @@
     "DataGrid_Column_FileName": "Dateiname",
     "DataGrid_Column_PageCount": "Seiten",
     "DataGrid_Column_FileSize": "Dateigröße",
-    "DataGrid_Column_Author": "Autor"
+    "DataGrid_Column_Author": "Autor",
+    "Message_UnsupportedFile": "❌ Nicht unterstützter Dateityp: {0}",
+    "Message_InputPasswd": "Bitte geben Sie das Passwort für das verschlüsselte Dokument \"{0}\" ein:",
+    "Message_EncryptWarning": "⚠️ Nach dem Zusammenführen verliert das verschlüsselte Dokument seinen Schutz. Bitte stellen Sie die Informationssicherheit sicher."
 }

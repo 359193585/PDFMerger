@@ -30,6 +30,7 @@
     "Status_ListLoaded": "{0} 個のファイルを読み込みました",
     "Status_ListEmpty": "リストは空です",
     "Status_Cleared": "リストをクリアしました",
+    "Status_SkippedFile": "サポートされていないファイルをスキップしました：{0}",
     "Status_IgnoreDuplicateFiles": "⚠️ 重複ファイルを無視しました：{0}",
     "Status_MergePreparing": "マージを準備中...",
     "Status_MergeProgress": "📄 マージ中 [{0}/{1}]: {2} ({3} ページ)",
@@ -48,5 +49,8 @@
     "DataGrid_Column_FileName": "ファイル名",
     "DataGrid_Column_PageCount": "ページ数",
     "DataGrid_Column_FileSize": "ファイルサイズ",
-    "DataGrid_Column_Author": "作成者"
+    "DataGrid_Column_Author": "作成者",
+    "Message_UnsupportedFile": "❌ サポートされていないファイル形式: {0}",
+    "Message_InputPasswd": "暗号化されたドキュメント「{0}」のパスワードを入力してください:",
+    "Message_EncryptWarning": "⚠️ 暗号化ドキュメントは結合後に保護が解除されます。情報の安全をご確認ください。"
 }
