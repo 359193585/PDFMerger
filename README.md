@@ -26,6 +26,7 @@ A concise, free, cross-platform PDF merging tool that supports retaining the ori
 - **Fully Offline Operation**​​: No internet connection is required. All document processing is performed locally; no documents are uploaded,ensuring privacy and security. (Users need to connect to the internet when actively clicking to upgrade the software on the About form, but no user data will be transmitted.)
 - **Clean and Distraction-free**​​: No ads, no membership, no usage restrictions.
 - **Support merging of ultra-large PDF files​​**: Tests have been completed for merging three files of 13GB each with 40,342 pages, outputting a 40GB document with 121,026 pages.
+- Starting from v2.0, **support for encrypted PDF** files in the merging process will be available.
 
 ## 🖥️ System Requirements
 - **Operating System​​**:
