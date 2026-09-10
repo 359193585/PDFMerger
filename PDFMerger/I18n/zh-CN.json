@@ -30,6 +30,7 @@
     "Status_ListLoaded": "已加载 {0} 个文件",
     "Status_ListEmpty": "列表为空",
     "Status_Cleared": "列表已清空",
+    "Status_SkippedFile": "跳过不支持的文件：{0}",
     "Status_IgnoreDuplicateFiles": "⚠️ 忽略重复文件：{0}",
     "Status_MergePreparing": "准备合并...",
     "Status_MergeProgress": "📄 正在合并 [{0}/{1}]: {2} ({3} 页)",
@@ -48,5 +49,8 @@
     "DataGrid_Column_FileName": "文件名",
     "DataGrid_Column_PageCount": "页数",
     "DataGrid_Column_FileSize": "文件大小",
-    "DataGrid_Column_Author": "作者"
+    "DataGrid_Column_Author": "作者",
+    "Message_UnsupportedFile": "❌ 不支持的文件类型：{0}",
+    "Message_InputPasswd": "请输入加密文档\"{0}\"的密码:",
+    "Message_EncryptWarning": "⚠️ 加密文档合并后，其内容将失去保护，请确认信息安全。"
 }

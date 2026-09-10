@@ -1,0 +1,29 @@
+using Avalonia.Controls;
+using Avalonia.Interactivity;
+
+namespace PDFMerger.Views;
+public partial class InputDialog : Window
+{
+    public InputDialog(string message, string title = "Please Input")
+    {
+        InitializeComponent();
+
+        Title = title;
+        MessageText.Text = message;
+
+        Opened += (_, _) =>
+        {
+            PasswordTextBox.Focus();
+        };
+    }
+
+    private void OkButton_Click(object? sender, RoutedEventArgs e)
+    {
+        Close(PasswordTextBox.Text);
+    }
+
+    private void CancelButton_Click(object? sender, RoutedEventArgs e)
+    {
+        Close(null);
+    }
+}

@@ -1,15 +1,8 @@
 // PdfSharpMergeServiceTests.cs
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using PDFMerger.Models;
 using PDFMerger.Services;
 using PdfSharp.Pdf;
 using PdfSharp.Pdf.IO;
-using Xunit;
 
 namespace PDFMerger.Tests.Services;
 
@@ -41,7 +34,7 @@ public class PdfSharpMergeServiceTests : IDisposable
     {
         await Assert.ThrowsAsync<ArgumentNullException>(() =>
             _service.MergeAsync(
-                Array.Empty<string>(),
+                Array.Empty<FileItem>(),
                 null!,
                 new MergeOptions()));
     }
@@ -51,7 +44,7 @@ public class PdfSharpMergeServiceTests : IDisposable
     {
         await Assert.ThrowsAsync<ArgumentNullException>(() =>
             _service.MergeAsync(
-                Array.Empty<string>(),
+                Array.Empty<FileItem>(),
                 GetOutputPath(),
                 null!));
     }
@@ -62,7 +55,7 @@ public class PdfSharpMergeServiceTests : IDisposable
         var outputPath = GetOutputPath();
 
         var result = await _service.MergeAsync(
-            Array.Empty<string>(),
+            Array.Empty<FileItem>(),
             outputPath,
             new MergeOptions());
 
@@ -81,7 +74,7 @@ public class PdfSharpMergeServiceTests : IDisposable
             "missing.pdf");
 
         var result = await _service.MergeAsync(
-            new[] { missingFile },
+            new[] { CreateFileItem(missingFile) },
             outputPath,
             new MergeOptions());
 
@@ -100,7 +93,7 @@ public class PdfSharpMergeServiceTests : IDisposable
         var outputPath = GetOutputPath();
 
         var result = await _service.MergeAsync(
-            new[] { pdf1, pdf2 },
+            new[] {CreateFileItem(pdf1), CreateFileItem(pdf2) },
             outputPath,
             new MergeOptions());
 
@@ -125,7 +118,7 @@ public class PdfSharpMergeServiceTests : IDisposable
         var outputPath = GetOutputPath();
 
         var result = await _service.MergeAsync(
-            new[] { first, second },
+            new[] { CreateFileItem(first), CreateFileItem(second) },
             outputPath,
             new MergeOptions());
 
@@ -145,7 +138,7 @@ public class PdfSharpMergeServiceTests : IDisposable
         var outputPath = GetOutputPath();
 
         var result = await _service.MergeAsync(
-            new[] { first, second },
+            new[] {CreateFileItem(first), CreateFileItem(second) },
             outputPath,
             new MergeOptions());
 
@@ -176,7 +169,7 @@ public class PdfSharpMergeServiceTests : IDisposable
         };
 
         var result = await _service.MergeAsync(
-            new[] { pdf, pdf },
+            new[] { CreateFileItem(pdf), CreateFileItem(pdf) },
             outputPath,
             options);
 
@@ -209,7 +202,7 @@ public class PdfSharpMergeServiceTests : IDisposable
         };
 
         var result = await _service.MergeAsync(
-            new[] { pdf, pdf },
+            new[] {CreateFileItem(pdf), CreateFileItem(pdf) },
             outputPath,
             options);
 
@@ -240,7 +233,7 @@ public class PdfSharpMergeServiceTests : IDisposable
         };
 
         var result = await _service.MergeAsync(
-            new[] { pdf },
+            new[] { CreateFileItem(pdf) },
             outputPath,
             options);
 
@@ -262,7 +255,9 @@ public class PdfSharpMergeServiceTests : IDisposable
         var outputPath = GetOutputPath();
 
         var result = await _service.MergeAsync(
-            new[] { pdf },
+            new[] {
+                CreateFileItem(pdf)
+            },
             outputPath,
             new MergeOptions());
 
@@ -294,7 +289,7 @@ public class PdfSharpMergeServiceTests : IDisposable
         };
 
         var result = await _service.MergeAsync(
-            new[] { first, second },
+            new[] { CreateFileItem(first), CreateFileItem(second) },
             outputPath,
             options);
 
@@ -327,7 +322,7 @@ public class PdfSharpMergeServiceTests : IDisposable
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
             _service.MergeAsync(
-                new[] { pdf },
+                new[] { CreateFileItem(pdf) },
                 outputPath,
                 new MergeOptions(),
                 cancellationTokenSource.Token));
@@ -347,7 +342,7 @@ public class PdfSharpMergeServiceTests : IDisposable
         var outputPath = GetOutputPath();
 
         var result = await _service.MergeAsync(
-            new[] { invalidPdf },
+            new[] { CreateFileItem(invalidPdf) },
             outputPath,
             new MergeOptions());
 
@@ -372,7 +367,7 @@ public class PdfSharpMergeServiceTests : IDisposable
         var outputPath = GetOutputPath();
 
         var result = await _service.MergeAsync(
-            new[] { textFile },
+            new[] { CreateFileItem(textFile) },
             outputPath,
             new MergeOptions());
 
@@ -401,6 +396,15 @@ public class PdfSharpMergeServiceTests : IDisposable
         return path;
     }
 
+    private static FileItem CreateFileItem(string path, string? password = null)
+    {
+        return new FileItem
+        {
+            FilePath = path,
+            Password = password,
+            IsEncrypted = password != null
+        };
+    }
     private string GetOutputPath()
     {
         return Path.Combine(

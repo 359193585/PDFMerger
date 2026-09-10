@@ -39,7 +39,7 @@ public class PdfMergeServiceStressTests : IDisposable
             $"Actual size: {sourceSize:N0} bytes.");
 
         var result = await _pdfMergeService.MergeAsync(
-            new[] { sourcePdf }, outputPdf, new MergeOptions());
+            new[] { CreateFileItem(sourcePdf) }, outputPdf, new MergeOptions());
 
         Assert.NotNull(result);
         Assert.True(
@@ -107,7 +107,15 @@ public class PdfMergeServiceStressTests : IDisposable
     }
     #endregion
 
-
+    private static FileItem CreateFileItem(string path, string? password = null)
+    {
+        return new FileItem
+        {
+            FilePath = path,
+            Password = password,
+            IsEncrypted = password != null
+        };
+    }
     public void Dispose()
     {
         try

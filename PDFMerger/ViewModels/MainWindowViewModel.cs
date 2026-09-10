@@ -9,9 +9,13 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using Avalonia.Controls;
+using Avalonia.Threading;
+using MsBox.Avalonia;
+using MsBox.Avalonia.Dto;
 using PDFMerger.Infrastructure;
 using PDFMerger.Models;
 using PDFMerger.Services;
+using PDFMerger.Views;
 using PdfSharp.Pdf.IO;
 
 namespace PDFMerger.ViewModels
@@ -21,6 +25,7 @@ namespace PDFMerger.ViewModels
         private readonly PdfSharpMergeService _pdfMergeService;
         public event EventHandler<string> ShowMessageRequested = delegate { };
         public static string DefaultOutputPdfName = "outputOfMerge.pdf";
+        public event Func<string, Task<string?>>? PasswordRequested;
 
         public MainWindowViewModel()
         {
@@ -194,41 +199,57 @@ namespace PDFMerger.ViewModels
             // Note: This method is called on the UI thread (from Click or Drop events),
             // so we read PDF information synchronously here, but to avoid blocking the UI, we use Task.Run to perform time-consuming operations in the background.
             // However, updating the collection must be done on the UI thread.
-            Task.Run(() =>
+            Task.Run(async () =>
             {
                 var inspectionService = new FileInspectionService();
                 foreach (var path in paths)
                 {
-                    if (File.Exists(path)
-                    && (EnableAddDuplicateCheck ? !FileItems.Any(f => f.FilePath == path) : true))
+                    if (!File.Exists(path)) continue;
+                    if (EnableAddDuplicateCheck && FileItems.Any(f => f.FilePath == path)) continue;
+                    var item = new FileItem
                     {
-                        var item = new FileItem
-                        {
-                            FilePath = path,
-                            FileName = Path.GetFileName(path)
-                        };
+                        FilePath = path,
+                        FileName = Path.GetFileName(path)
+                    };
 
-                        var fileInspectInfo = inspectionService.Inspect(path);
-                        if (fileInspectInfo != null && fileInspectInfo.IsSupported)
+                    var fileInspectInfo = inspectionService.Inspect(path);
+                    if (fileInspectInfo == null || !fileInspectInfo.IsSupported)
+                    {
+                        ShowMessage("" + T("Message_UnsupportedFile", item.FilePath));
+                        continue; // unsupported type, skip
+                    }
+                    if (fileInspectInfo.IsEncrypted)
+                    {
+                        var password = await ShowInputDialogBoxAsync(item.FileName);
+                        if (password != null)
                         {
-                            item.Type = fileInspectInfo.Type;
-                            item.PageCount = fileInspectInfo.PageCount;
-                            item.Author = fileInspectInfo.Author;
-                            item.IsEncrypted = fileInspectInfo.IsEncrypted;
-                            item.FileSize = fileInspectInfo.FileSize;
-                        }
-                        else
-                            continue; // unsupported type, skip
-
-                        // marshal the add operation to the UI thread via Dispatcher
-                        if (fileInspectInfo.PageCount > 0)
-                        {
-                            Avalonia.Threading.Dispatcher.UIThread.Post(() => FileItems.Add(item));
+                            fileInspectInfo = inspectionService.Inspect(path, password);
                         }
                         else
                         {
-                            StatusMessage = T("Status_SkippedFile", item.FileName);
+                            fileInspectInfo.IsSupported = false;
+                            ShowMessage("" + T("Message_UnsupportedFile", item.FileName));
+                            continue; // user cancel input password, skip this file
                         }
+                    }
+
+                    item.Type = fileInspectInfo.Type;
+                    item.PageCount = fileInspectInfo.PageCount;
+                    item.Author = fileInspectInfo.Author;
+                    item.IsEncrypted = fileInspectInfo.IsEncrypted;
+                    item.FileSize = fileInspectInfo.FileSize;
+                    item.Password = fileInspectInfo.Password;
+
+
+
+                    // marshal the add operation to the UI thread via Dispatcher
+                    if (fileInspectInfo.PageCount > 0)
+                    {
+                        Avalonia.Threading.Dispatcher.UIThread.Post(() => FileItems.Add(item));
+                    }
+                    else
+                    {
+                        StatusMessage = T("Status_SkippedFile", item.FileName);
                     }
                 }
             }).ContinueWith(_ =>
@@ -243,6 +264,27 @@ namespace PDFMerger.ViewModels
                      : T("Status_ListEmpty");
                 });
             });
+        }
+
+        private void ShowMessage(string message)
+        {
+            Dispatcher.UIThread.Post(() =>
+            {
+                ShowMessageRequested?.Invoke(this, message);
+            });
+        }
+        private async Task<string?> ShowInputDialogBoxAsync(string fileName)
+        {
+            string titleMesg = T("Message_InputPasswd", fileName);
+
+            if (PasswordRequested is null)
+                return null;
+
+            var password = await Dispatcher.UIThread.InvokeAsync(
+                async () => await PasswordRequested(
+                    $"{titleMesg}"));
+
+            return password;
         }
 
         public void SetOutputPath(string path)
@@ -337,11 +379,13 @@ namespace PDFMerger.ViewModels
 
         private bool CheckEncryptedFiles()
         {
-            var encrypted = FileItems.Where(f => f.IsEncrypted).ToList();
-            if (encrypted.Any())
+            var encryptedWithoutPassword = FileItems
+                .Where(f => f.IsEncrypted && string.IsNullOrWhiteSpace(f.Password))
+                .ToList();
+            if (encryptedWithoutPassword.Any())
             {
-                var msg = T("Message_EncryptedFiles", string.Join(", ", encrypted.Select(f => f.FileName)));
-                ShowMessageRequested?.Invoke(this, msg);
+                var msg = T("Message_EncryptedFiles", string.Join(",\n ", encryptedWithoutPassword.Select(f => f.FileName)));
+                ShowMessage(msg);
                 return true;
             }
             return false;
@@ -439,7 +483,7 @@ namespace PDFMerger.ViewModels
 
             try
             {
-                var result = await _pdfMergeService.MergeAsync(filePaths, OutputPath, options, _cts.Token);
+                var result = await _pdfMergeService.MergeAsync(FileItems, OutputPath, options, _cts.Token);
                 _cts.Token.ThrowIfCancellationRequested();
                 if (result != null)
                 {

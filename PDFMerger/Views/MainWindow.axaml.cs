@@ -30,6 +30,11 @@ namespace PDFMerger.Views
                 await box.ShowAsync();
             };
 
+            vm.PasswordRequested += async message =>
+            {
+                var dialog = new InputDialog(message);
+                return await dialog.ShowDialog<string?>(this);
+            };
 
             // ----- enable drag and drop for DataGrid  -----
             DragDrop.SetAllowDrop(FileDataGrid, true);
@@ -40,7 +45,7 @@ namespace PDFMerger.Views
             FileDataGrid.AddHandler(DragDrop.DragOverEvent, OnDataGridDragOver);
             FileDataGrid.AddHandler(DragDrop.DropEvent, OnDataGridDrop);
 
-
+            
         }
 
         private void ConfigureDataGridColumns()

@@ -13,11 +13,12 @@ public sealed class PdfFormatDetector
             using var doc = PdfReader.Open(filePath, PdfDocumentOpenMode.Import);
             return new FileInspectionResult
             {
+                FileName = Path.GetFileName(filePath),
+                FileSize = new FileInfo(filePath).Length,
+                IsEncrypted = false,
                 IsSupported = true,
                 PageCount = doc.PageCount,
                 Author = doc.Info.Author ?? "",
-                IsEncrypted = false,
-                FileSize = new FileInfo(filePath).Length
             };
         }
         catch (PdfReaderException ex)
@@ -26,7 +27,9 @@ public sealed class PdfFormatDetector
             {
                 return new FileInspectionResult
                 {
-                    IsSupported = false,
+                    FileName = Path.GetFileName(filePath),
+                    FileSize = new FileInfo(filePath).Length,
+                    IsSupported = true,
                     IsEncrypted = true
                 };
             }
@@ -45,6 +48,30 @@ public sealed class PdfFormatDetector
                 IsSupported = false
             };
 
+        }
+    }
+    public FileInspectionResult Detect(string filePath, string pdfPassword)
+    {
+        try
+        {
+            using var doc = PdfReader.Open(filePath, pdfPassword, PdfDocumentOpenMode.Import);
+            return new FileInspectionResult
+            {
+                FileName = Path.GetFileName(filePath),
+                FileSize = new FileInfo(filePath).Length,
+                IsEncrypted = true,
+                IsSupported = true,
+                PageCount = doc.PageCount,
+                Author = doc.Info.Author ?? "",
+                Password = pdfPassword
+            };
+        }
+        catch (Exception)
+        {
+            return new FileInspectionResult
+            {
+                IsSupported = false
+            };
         }
     }
 }

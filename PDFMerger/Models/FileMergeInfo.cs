@@ -9,6 +9,7 @@ namespace PDFMerger.Models;
 public class FileMergeInfo
 {
     public string FilePath { get; set; } = string.Empty;
+    public string? Password { get; set; }
     public string FileNameWithoutExtension { get; set; } = string.Empty;
     public long FileSize { get; set; }
     public int StartPageNumber { get; set; } // 1-based

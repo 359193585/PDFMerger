@@ -1,0 +1,37 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="PDFMerger.Views.InputDialog"
+        Title="InputDialog"
+        Width="360"
+        Height="260"
+        WindowStartupLocation="CenterScreen"
+        CanResize="False"
+        Background="{DynamicResource SystemBackgroundBrush}">
+
+
+  <StackPanel Margin="20" Spacing="12">
+
+        <TextBlock
+            x:Name="MessageText"
+            TextWrapping="Wrap" />
+
+        <TextBox
+            x:Name="PasswordTextBox"
+            PasswordChar="●" />
+
+        <StackPanel
+            Orientation="Horizontal"
+            HorizontalAlignment="Right"
+            Spacing="8">
+
+            <Button
+                Content="OK"
+                Click="OkButton_Click" />
+
+            <Button
+                Content="Cancel"
+                Click="CancelButton_Click" />
+        </StackPanel>
+
+    </StackPanel>
+</Window>

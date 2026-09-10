@@ -49,6 +49,30 @@ public sealed class FileInspectionService
         return CreateFailure("UnsupportedFormat");
     }
 
+    public FileInspectionResult Inspect(string filePath,string pdfPassword)
+    {
+        if (string.IsNullOrWhiteSpace(filePath))
+        {
+            return CreateFailure("InvalidPath");
+        }
+
+        var fileInfo = new FileInfo(filePath);
+
+        if (!fileInfo.Exists)
+        {
+            return CreateFailure("FileNotFound");
+        }
+
+        var extension = fileInfo.Extension;
+
+        if (FileExtensions.PdfExtensions.Contains(
+                extension,
+                StringComparer.OrdinalIgnoreCase))
+        {
+            return _pdfFormatDetector.Detect(filePath, pdfPassword);
+        }
+        return CreateFailure("UnsupportedFormat");
+    }
     private FileInspectionResult InspectImage(string filePath, FileInfo fileInfo)
     {
         var imageFormatInfo = _imageFormatDetector.Detect(filePath);

@@ -50,6 +50,7 @@ namespace PDFMerger.Models
         }
 
         public bool IsEncrypted { get; set; } = false;
+        public string ? Password { get; set; } = null;
         public bool IsImage => Type == FileType.Image;
        
 
