@@ -30,8 +30,13 @@
         <None Update="I18n\*.json">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
+        <!-- default en-US embedded resource -->
+        <EmbeddedResource Include="I18n\en-US.json">
+            <LogicalName>I18n.en-US.json</LogicalName>
+            <LogicalName>I18n.zh-CN.json</LogicalName>
+        </EmbeddedResource>
     </ItemGroup>
-	
+    
   <ItemGroup>
     <PackageReference Include="Avalonia" Version="12.1.0" />
     <PackageReference Include="Avalonia.Controls.DataGrid" Version="12.1.0" />

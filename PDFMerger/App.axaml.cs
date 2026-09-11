@@ -25,6 +25,11 @@ namespace PDFMerger
         {
             // register the JSON plugin and set the default language to English
             var culture = GetInitialCulture().Name;            // default "en-US"
+            // now support four languages: English (en-US), Simplified Chinese (zh-CN), German (de-DE) and Japanese (ja-JP)
+            //culture = new CultureInfo("zh-CN").Name;
+            //culture = new CultureInfo("en-US").Name;
+            //culture = new CultureInfo("de-DE").Name;
+            //culture = new CultureInfo("ja-JP").Name;
             I18n.Initialize(culture);
             PdfSharpInitializer.Initialize();
 
