@@ -27,6 +27,7 @@ A concise, free, cross-platform PDF merging tool that supports retaining the ori
 - **Clean and Distraction-free**​​: No ads, no membership, no usage restrictions.
 - **Support merging of ultra-large PDF files​​**: Tests have been completed for merging three files of 13GB each with 40,342 pages, outputting a 40GB document with 121,026 pages.
 - Starting from v2.0, **support for encrypted PDF** files in the merging process will be available.
+- Multilingual support: Chinese, English, Japanese, German, etc.
 
 ## 🖥️ System Requirements
 - **Operating System​​**:
@@ -40,9 +41,22 @@ A concise, free, cross-platform PDF merging tool that supports retaining the ori
 ## 🚀 Usage Instructions
 
 ### Graphical User Interface (GUI)
+Multilingual support: Chinese, English, Japanese, German, etc.
+
+<div align="center">
+  <img width="1007" height="668" alt="MainUI-zh-CN" src="./docs/images/MainUI.zh-CN.png" />
+</div>
 
 <div align="center">
   <img width="1007" height="668" alt="MainUI-en-US" src="./docs/images/MainUI.en-US.png" />
+</div>
+
+<div align="center">
+  <img width="1007" height="668" alt="MainUI-ja-JP" src="./docs/images/MainUI.ja-JP.png" />
+</div>
+
+<div align="center">
+  <img width="1007" height="668" alt="MainUI-de-DE" src="./docs/images/MainUI.de-DE.png" />
 </div>
 
 1. Download the compressed package corresponding to your platform, and run the `PDFMerger` executable file after decompression.

@@ -26,6 +26,7 @@
 - **干净无打扰**：无广告、无会员、无使用限制。
 - **支持超大PDF文件合并**： 已经测试合并3个13G的、40342页的文件的合并，输出40G、12.1万页的文档。
 - v2.0开始，**支持加密pdf**文件参加合并。
+- 多语言支持：中文、英文、日文、德文等。
 ---
 
 ## 🖥️ 系统要求
@@ -42,11 +43,24 @@
 ## 🚀 使用方法
 
 ### 图形界面 (GUI)
+多语言支持：中文、英文、日文、德文等。
+
 
 <div align="center">
   <img width="1007" height="668" alt="MainUI-zh-CN" src="./docs/images/MainUI.zh-CN.png" />
 </div>
 
+<div align="center">
+  <img width="1007" height="668" alt="MainUI-en-US" src="./docs/images/MainUI.en-US.png" />
+</div>
+
+<div align="center">
+  <img width="1007" height="668" alt="MainUI-ja-JP" src="./docs/images/MainUI.ja-JP.png" />
+</div>
+
+<div align="center">
+  <img width="1007" height="668" alt="MainUI-de-DE" src="./docs/images/MainUI.de-DE.png" />
+</div>
 
 1. 下载对应平台的压缩包，解压后运行 `PDFMerger` 可执行文件。
 2. 主界面：
