@@ -10,7 +10,6 @@ using Avalonia.Markup.Xaml;
 using Avalonia.Platform;
 using PDFMerger.Infrastructure;
 using PDFMerger.Views;
-using PdfSharp.Fonts;
 
 namespace PDFMerger
 {
