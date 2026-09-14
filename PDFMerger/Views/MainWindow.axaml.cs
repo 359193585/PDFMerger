@@ -24,9 +24,17 @@ namespace PDFMerger.Views
             var vm = new MainWindowViewModel();
             DataContext = vm;
             ConfigureDataGridColumns();
+
+            //method 1 
             vm.ShowMessageRequested += async (s, msg) =>
             {
                 var box = MessageBoxManager.GetMessageBoxStandard("Notice", msg);
+                await box.ShowAsync();
+            };
+            //method 2 task async
+            vm.ShowMessageRequestedTask += async message =>
+            {
+                var box = MessageBoxManager.GetMessageBoxStandard("Notice", message);
                 await box.ShowAsync();
             };
 
@@ -45,7 +53,7 @@ namespace PDFMerger.Views
             FileDataGrid.AddHandler(DragDrop.DragOverEvent, OnDataGridDragOver);
             FileDataGrid.AddHandler(DragDrop.DropEvent, OnDataGridDrop);
 
-            
+
         }
 
         private void ConfigureDataGridColumns()

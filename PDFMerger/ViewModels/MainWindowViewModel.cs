@@ -8,23 +8,21 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
-using Avalonia.Controls;
 using Avalonia.Threading;
-using MsBox.Avalonia;
-using MsBox.Avalonia.Dto;
 using PDFMerger.Infrastructure;
 using PDFMerger.Models;
 using PDFMerger.Services;
-using PDFMerger.Views;
-using PdfSharp.Pdf.IO;
 
 namespace PDFMerger.ViewModels
 {
     public class MainWindowViewModel : ObservableObject
     {
         private readonly PdfSharpMergeService _pdfMergeService;
-        public event EventHandler<string> ShowMessageRequested = delegate { };
         public static string DefaultOutputPdfName = "outputOfMerge.pdf";
+
+        public event EventHandler<string> ShowMessageRequested = delegate { };
+        public Func<string, Task>? ShowMessageRequestedTask;
+
         public event Func<string, Task<string?>>? PasswordRequested;
 
         public MainWindowViewModel()
@@ -273,6 +271,12 @@ namespace PDFMerger.ViewModels
                 ShowMessageRequested?.Invoke(this, message);
             });
         }
+        private async Task ShowMessageAsync(string message)
+        {
+            if (ShowMessageRequestedTask != null)
+                await ShowMessageRequestedTask(message);
+        }
+
         private async Task<string?> ShowInputDialogBoxAsync(string fileName)
         {
             string titleMesg = T("Message_InputPasswd", fileName);
@@ -370,7 +374,7 @@ namespace PDFMerger.ViewModels
                 }
                 // trigger message event
                 var msg = T("Message_RemovedMissing", missingFiles.Count);
-                ShowMessageRequested?.Invoke(this, msg);
+                ShowMessage(msg);
                 return true; // missing files found
             }
             return false; // no missing files

@@ -61,7 +61,7 @@
     "Message_UnsupportedFile": "❌ 不支持的文件类型：{0}",
     "Message_RemovedMissing": "已自动移除 {0} 个不存在的文件。请确认列表后重新合并。",
     "Message_InputPasswd": "请输入加密文档\"{0}\"的密码:",
-    "Message_EncryptWarning": "⚠️ 加密文档合并后，其内容将失去保护，请确认信息安全。"，
+    "Message_EncryptWarning": "⚠️ 加密文档合并后，其内容将失去保护，请确认信息安全。",
 
     "Error_BiggerThanMaxSize": "❌ 检测到超过 2GB 的 PDF 文件，当前库不支持合并超大文件。请尝试先拆分文件。{0}"
 }
