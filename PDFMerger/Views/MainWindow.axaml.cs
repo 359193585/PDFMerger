@@ -66,8 +66,20 @@ namespace PDFMerger.Views
             });
             FileDataGrid.Columns.Add(new DataGridTextColumn
             {
+                Header = T("DataGrid_Column_Type"),
+                Binding = new Binding("Type"),
+                Width = new DataGridLength(1, DataGridLengthUnitType.Star)
+            });
+            FileDataGrid.Columns.Add(new DataGridTextColumn
+            {
                 Header = T("DataGrid_Column_PageCount"),
                 Binding = new Binding("PageCount"),
+                Width = new DataGridLength(1, DataGridLengthUnitType.Star)
+            });
+            FileDataGrid.Columns.Add(new DataGridTextColumn
+            {
+                Header = T("DataGrid_Column_IsEncrypted"),
+                Binding = new Binding("IsEncryptedDisplay"),
                 Width = new DataGridLength(1, DataGridLengthUnitType.Star)
             });
             FileDataGrid.Columns.Add(new DataGridTextColumn

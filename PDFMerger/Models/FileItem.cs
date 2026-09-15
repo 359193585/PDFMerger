@@ -33,8 +33,28 @@ namespace PDFMerger.Models
             get => _fileSize;
             set => SetProperty(ref _fileSize, value);
         }
-        public string FileSizeDisplay => FileSize > 0 ? $"{FileSize / 1024.0:F1} KB" : "Unknown";
+        public string FileSizeDisplay
+        {
+            get
+            {
+                if (FileSize <= 0)
+                    return "Unknown";
 
+                string[] units = { "B", "KB", "MB", "GB", "TB" };
+                double size = FileSize;
+                int unitIndex = 0;
+
+                while (size >= 1024 && unitIndex < units.Length - 1)
+                {
+                    size /= 1024;
+                    unitIndex++;
+                }
+
+                return unitIndex == 0
+                    ? $"{size:F0} {units[unitIndex]}"
+                    : $"{size:0.##} {units[unitIndex]}";
+            }
+        }
         private string? _author;
         public string Author
         {
@@ -50,6 +70,7 @@ namespace PDFMerger.Models
         }
 
         public bool IsEncrypted { get; set; } = false;
+        public string IsEncryptedDisplay => IsEncrypted ? "✅" : "";
         public string ? Password { get; set; } = null;
         public bool IsImage => Type == FileType.Image;
        

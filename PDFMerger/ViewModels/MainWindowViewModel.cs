@@ -209,7 +209,7 @@ namespace PDFMerger.ViewModels
                         FilePath = path,
                         FileName = Path.GetFileName(path)
                     };
-
+                    StatusMessage = T("Status_Loading") + " " + item.FileName;
                     var fileInspectInfo = inspectionService.Inspect(path);
                     if (fileInspectInfo == null || !fileInspectInfo.IsSupported)
                     {
@@ -238,7 +238,7 @@ namespace PDFMerger.ViewModels
                     item.FileSize = fileInspectInfo.FileSize;
                     item.Password = fileInspectInfo.Password;
 
-
+                   
 
                     // marshal the add operation to the UI thread via Dispatcher
                     if (fileInspectInfo.PageCount > 0)

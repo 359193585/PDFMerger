@@ -16,7 +16,9 @@
     "MainWindow_About": "ℹ️ バージョン情報",
 
     "DataGrid_Column_FileName": "ファイル名",
+    "DataGrid_Column_Type": "ファイルタイプ",
     "DataGrid_Column_PageCount": "ページ数",
+    "DataGrid_Column_IsEncrypted": "暗号化されているか",
     "DataGrid_Column_FileSize": "ファイルサイズ",
     "DataGrid_Column_Author": "作成者",
 
@@ -51,8 +53,8 @@
 
     "Status_MergePreparing": "結合の準備中...",
     "Status_MergeProgress": "📄 結合中 [{0}/{1}]：{2}（{3} ページ）",
-    "Status_MergerSuccess": "✅ 成功！総ページ数：{0}、ファイル：{1}",
-    "Status_MergeComplete": "✅ 結合完了！合計 {0} ページ",
+    "Status_MergerSuccess": "✔ 成功！総ページ数：{0}、ファイル：{1}",
+    "Status_MergeComplete": "✔ 結合完了！合計 {0} ページ",
     "Status_MergeFailed": "❌ 結合に失敗しました：{0}",
     "Status_MergeCancelled": "結合をキャンセルしました",
 

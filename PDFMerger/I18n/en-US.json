@@ -16,7 +16,9 @@
     "MainWindow_About": "ℹ️ About",
 
     "DataGrid_Column_FileName": "File Name",
+    "DataGrid_Column_Type": "Type",
     "DataGrid_Column_PageCount": "Pages",
+    "DataGrid_Column_IsEncrypted": "Encrypted",
     "DataGrid_Column_FileSize": "File Size",
     "DataGrid_Column_Author": "Author",
 
@@ -51,8 +53,8 @@
 
     "Status_MergePreparing": "Preparing to merge...",
     "Status_MergeProgress": "📄 Merging [{0}/{1}]: {2} ({3} page(s))",
-    "Status_MergerSuccess": "✅ Success! Total pages: {0}, File: {1}",
-    "Status_MergeComplete": "✅ Merge complete! {0} page(s) total",
+    "Status_MergerSuccess": "✔ Success! Total pages: {0}, File: {1}",
+    "Status_MergeComplete": "✔ Merge complete! {0} page(s) total",
     "Status_MergeFailed": "❌ Merge failed: {0}",
     "Status_MergeCancelled": "Merge cancelled",
 

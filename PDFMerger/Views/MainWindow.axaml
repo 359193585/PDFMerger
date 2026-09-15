@@ -97,7 +97,7 @@
               BorderThickness="0" />
     </StackPanel>
 
-    <!-- file list (Row 1) -->
+    <!-- file item grid list (Row 1) -->
     <DataGrid Grid.Row="1"
               x:Name="FileDataGrid"
               ItemsSource="{Binding FileItems}"
