@@ -70,7 +70,7 @@ namespace PDFMerger.Models
         }
 
         public bool IsEncrypted { get; set; } = false;
-        public string IsEncryptedDisplay => IsEncrypted ? "✅" : "";
+        public string IsEncryptedDisplay => IsEncrypted ? "🔒" : "";
         public string ? Password { get; set; } = null;
         public bool IsImage => Type == FileType.Image;
        

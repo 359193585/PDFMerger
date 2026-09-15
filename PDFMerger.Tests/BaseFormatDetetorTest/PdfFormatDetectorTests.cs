@@ -73,7 +73,28 @@ public class PdfFormatDetectorTests : IDisposable
         Assert.False(result.IsSupported);
         Assert.True(result.IsEncrypted);
     }
+    #region LiteDetect Tests
+    [Fact]
+    public void LiteDetect_ValidPdf_ReturnsCorrectInspectionResult()
+    {
+        var filePath = CreatePdf(
+            pageCount: 3,
+            author: "Test Author");
 
+        var detector = new PdfFormatDetector();
+
+        var result = detector.LiteDetect(filePath);
+        var expectedFileSize = new FileInfo(filePath).Length;
+
+        Assert.True(result.IsSupported);
+        Assert.False(result.IsEncrypted);
+        Assert.Equal(3, result.PageCount);
+        Assert.Equal("Test Author", result.Author);
+        Assert.Equal(expectedFileSize, result.FileSize);
+    }
+    #endregion
+
+    #region Helpers
     private string CreatePdf(int pageCount = 1, string? author = null, string? password = null)
     {
         var filePath = Path.Combine(
@@ -116,5 +137,6 @@ public class PdfFormatDetectorTests : IDisposable
         {
         }
     }
+    #endregion
 }
 

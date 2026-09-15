@@ -36,7 +36,8 @@ public sealed class FileInspectionService
                 extension,
                 StringComparer.OrdinalIgnoreCase))
         {
-            return _pdfFormatDetector.Detect(filePath);
+            //return _pdfFormatDetector.Detect(filePath);
+            return _pdfFormatDetector.LiteDetect(filePath);
         }
 
         if (FileExtensions.ImageExtensions.Contains(
