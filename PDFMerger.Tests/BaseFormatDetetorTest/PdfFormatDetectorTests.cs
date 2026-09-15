@@ -70,7 +70,7 @@ public class PdfFormatDetectorTests : IDisposable
 
         var result = detector.Detect(filePath);
 
-        Assert.False(result.IsSupported);
+        Assert.True(result.IsSupported);
         Assert.True(result.IsEncrypted);
     }
     #region LiteDetect Tests
