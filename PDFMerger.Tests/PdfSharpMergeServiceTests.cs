@@ -3,6 +3,9 @@ using PDFMerger.Models;
 using PDFMerger.Services;
 using PdfSharp.Pdf;
 using PdfSharp.Pdf.IO;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats.Png;
+using SixLabors.ImageSharp.PixelFormats;
 
 namespace PDFMerger.Tests.Services;
 
@@ -154,6 +157,30 @@ public class PdfSharpMergeServiceTests : IDisposable
             result.MergedFiles[1]);
 
         Assert.Empty(result.DuplicatedFiles);
+    }
+
+    [Fact]
+    public async Task MergerAsync_PdfImgMixedMerge()
+    {
+        var filePathImage = CreatePngFile(800, 600);
+        var filePathImage2 = CreatePngFile(800, 600);
+        var pdfFile1 = CreatePdf("first.pdf", 2);
+        var pdfFile2 = CreatePdf("second.pdf", 3);
+
+        var outputPath = GetOutputPath();
+
+        var result = await _service.MergeAsync(
+            new[] { CreateFileItem(filePathImage),
+                    CreateFileItem(pdfFile1),
+                    CreateFileItem(pdfFile2),
+                    CreateFileItem(filePathImage2)},
+            outputPath,
+            new MergeOptions());
+
+        Assert.True(result.Success);
+        using var outputDocument =
+            PdfReader.Open(outputPath, PdfDocumentOpenMode.Import);
+        Assert.Equal(7, outputDocument.PageCount);
     }
 
     [Fact]
@@ -411,7 +438,30 @@ public class PdfSharpMergeServiceTests : IDisposable
             _testDirectory,
             $"merged-{Guid.NewGuid():N}.pdf");
     }
+    private static string CreatePngFile(int width, int height)
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.png");
+        File.WriteAllBytes(path, CreatePngBytes(width, height));
+        return path;
+    }
+    private static byte[] CreatePngBytes(
+       int width,
+       int height,
+       double horizontalDpi = 96,
+       double verticalDpi = 96)
+    {
+        using var image = new Image<Rgba32>(width, height);
 
+        image.Metadata.HorizontalResolution = horizontalDpi;
+
+        image.Metadata.VerticalResolution = verticalDpi;
+
+        using var stream = new MemoryStream();
+
+        image.Save(stream, new PngEncoder());
+
+        return stream.ToArray();
+    }
     public void Dispose()
     {
         try
