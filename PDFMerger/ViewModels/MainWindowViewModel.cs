@@ -2,6 +2,7 @@
 using System;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -13,576 +14,649 @@ using PDFMerger.Infrastructure;
 using PDFMerger.Models;
 using PDFMerger.Services;
 
-namespace PDFMerger.ViewModels
+namespace PDFMerger.ViewModels;
+
+public class MainWindowViewModel : ObservableObject
 {
-    public class MainWindowViewModel : ObservableObject
+    private readonly PdfSharpMergeService _pdfMergeService;
+    public static string DefaultOutputPdfName = "outputOfMerge.pdf";
+
+    public MainWindowViewModel()
     {
-        private readonly PdfSharpMergeService _pdfMergeService;
-        public static string DefaultOutputPdfName = "outputOfMerge.pdf";
+        _pdfMergeService = new PdfSharpMergeService();
+        InitCommands();
+        FileItems.CollectionChanged += OnFileItemsChanged;
+    }
 
-        public event EventHandler<string> ShowMessageRequested = delegate { };
-        public Func<string, Task>? ShowMessageRequestedTask;
+    private void InitCommands()
+    {
+        AboutCommand = new RelayCommand(async () => await App.ShowAboutDialogAsync());
+        CancelCommand = new RelayCommand(CancelMerge, () => IsMerging);
+        ClearListCommand = new RelayCommand(ClearList);
+        MergeCommand = new RelayCommand(async () => await MergePdfs(), () => FileItems.Count > 0 && !string.IsNullOrEmpty(OutputPath) && !IsMerging);
+        MoveDownCommand = new RelayCommand(MoveDown, () => SelectedItem != null && FileItems.IndexOf(SelectedItem) < FileItems.Count - 1);
+        MoveUpCommand = new RelayCommand(MoveUp, () => SelectedItem != null && FileItems.IndexOf(SelectedItem) > 0);
+        RemoveSelectedCommand = new RelayCommand(RemoveSelected, () => SelectedItem != null);
+    }
 
-        public event Func<string, string, string, Task<string>>? PasswordRequested;
+    #region Properties for binding to the view
 
-        public MainWindowViewModel()
+    private string _outputPath = string.Empty;
+    public string OutputPath
+    {
+        get => _outputPath;
+        set
         {
-            _pdfMergeService = new PdfSharpMergeService();
-            InitCommands();
-            FileItems.CollectionChanged += OnFileItemsChanged;
-        }
-
-        private void InitCommands()
-        {
-            AboutCommand = new RelayCommand(async () => await App.ShowAboutDialogAsync());
-            CancelCommand = new RelayCommand(CancelMerge, () => IsMerging);
-            ClearListCommand = new RelayCommand(ClearList);
-            MergeCommand = new RelayCommand(async () => await MergePdfs(), () => FileItems.Count > 0 && !string.IsNullOrEmpty(OutputPath) && !IsMerging);
-            MoveDownCommand = new RelayCommand(MoveDown, () => SelectedItem != null && FileItems.IndexOf(SelectedItem) < FileItems.Count - 1);
-            MoveUpCommand = new RelayCommand(MoveUp, () => SelectedItem != null && FileItems.IndexOf(SelectedItem) > 0);
-            RemoveSelectedCommand = new RelayCommand(RemoveSelected, () => SelectedItem != null);
-        }
-
-        #region Properties for binding to the view
-
-        private string _outputPath = string.Empty;
-        public string OutputPath
-        {
-            get => _outputPath;
-            set
+            if (SetProperty(ref _outputPath, value))
             {
-                if (SetProperty(ref _outputPath, value))
+                UpdateCanMerge();
+            }
+        }
+    }
+
+    private double _progressValue;
+    public double ProgressValue
+    {
+        get => _progressValue;
+        set => SetProperty(ref _progressValue, value);
+    }
+
+    private string _statusMessage = T("Status_Ready");
+    public string StatusMessage
+    {
+        get => _statusMessage;
+        set => SetProperty(ref _statusMessage, value);
+    }
+
+    private bool _canMerge;
+    public bool CanMerge
+    {
+        get => _canMerge;
+        set => SetProperty(ref _canMerge, value);
+    }
+
+    private FileItem? _selectedItem = null!;
+    public FileItem? SelectedItem
+    {
+        get => _selectedItem;
+        set
+        {
+            if (SetProperty(ref _selectedItem, value))
+            {
+                UpdateMovementCommands();
+            }
+        }
+    }
+
+    private bool _enableAddDuplicateCheck = false;
+    public bool EnableAddDuplicateCheck
+    {
+        get => _enableAddDuplicateCheck;
+        set => SetProperty(ref _enableAddDuplicateCheck, value);
+    }
+
+    private bool _addPageNumbers = true;
+    public bool AddPageNumbers
+    {
+        get => _addPageNumbers;
+        set => SetProperty(ref _addPageNumbers, value);
+    }
+
+    private bool _enableImageSupport = true;
+    public bool EnableImageSupport
+    {
+        get => _enableImageSupport;
+        set => SetProperty(ref _enableImageSupport, value);
+    }
+
+    // output PDF document properties
+    private bool _isSubjectManuallySet = false;
+    private string _docTitle = "MergedFiles";
+    public string DocTitle
+    {
+        get => _docTitle;
+        set => SetProperty(ref _docTitle, value);
+    }
+
+    private string _docAuthor = "User of PDFMerger";
+    public string DocAuthor
+    {
+        get => _docAuthor;
+        set => SetProperty(ref _docAuthor, value);
+    }
+
+    private string _docSubject = "";
+    public string DocSubject
+    {
+        get => _docSubject;
+        set
+        {
+            if (SetProperty(ref _docSubject, value))
+                _isSubjectManuallySet = true;
+        }
+    }
+
+    private string _docCreator = "PDFMerger";
+    public string DocCreator
+    {
+        get => _docCreator;
+        set => SetProperty(ref _docCreator, value);
+    }
+
+    // cancel support properties
+    private CancellationTokenSource? _cts;
+
+    private bool _isMerging;
+    public bool IsMerging
+    {
+        get => _isMerging;
+        set
+        {
+            if (SetProperty(ref _isMerging, value))
+            {
+                UpdateCanMerge();
+            }
+        }
+    }
+
+    private void CancelMerge()
+    {
+        Debug.WriteLine($"---> [Cancel] 被调用了！时间: {DateTime.Now:HH:mm:ss.fff}");
+        _cts?.Cancel();
+        StatusMessage = T("Status_Cancelling", "Cancelling...");
+    }
+    public ICommand AboutCommand { get; private set; } = null!;
+    public ICommand CancelCommand { get; private set; } = null!;
+    public ICommand ClearListCommand { get; private set; } = null!;
+    public ICommand MergeCommand { get; private set; } = null!;
+    public ICommand MoveDownCommand { get; private set; } = null!;
+    public ICommand MoveUpCommand { get; private set; } = null!;
+    public ICommand RemoveSelectedCommand { get; private set; } = null!;
+    #endregion
+
+    #region public methods for View to call (add files, set output path) 
+    public void AddFiles(string[] paths)
+    {
+        if (paths == null || paths.Length == 0) return;
+
+        // if OutputPath is empty, set it to the directory of the first file with a default name
+        if (string.IsNullOrEmpty(OutputPath) && paths.Length > 0)
+        {
+            var dir = Path.GetDirectoryName(paths[0]);
+            if (!string.IsNullOrEmpty(dir))
+                OutputPath = Path.Combine(dir, DefaultOutputPdfName);
+        }
+
+        StatusMessage = T("Status_Loading");
+        ProgressValue = 0;
+
+        // Note: This method is called on the UI thread (from Click or Drop events),
+        // so we read PDF information synchronously here, but to avoid blocking the UI, we use Task.Run to perform time-consuming operations in the background.
+        // However, updating the collection must be done on the UI thread.
+        Task.Run(async () =>
+        {
+            var inspectionService = new FileInspectionService();
+            foreach (var path in paths)
+            {
+                if (!File.Exists(path)) continue;
+                if (EnableAddDuplicateCheck && FileItems.Any(f => f.FilePath == path)) continue;
+                var item = new FileItem
                 {
-                    UpdateCanMerge();
+                    FilePath = path,
+                    FileName = Path.GetFileName(path)
+                };
+                StatusMessage = T("Status_Loading") + " " + item.FileName;
+                var fileInspectInfo = inspectionService.Inspect(path);
+                if (fileInspectInfo == null || !fileInspectInfo.IsSupported)
+                {
+                    ShowMessage("" + T("Message_UnsupportedFile", item.FilePath));
+                    continue; // unsupported type, skip
                 }
-            }
-        }
-
-        private double _progressValue;
-        public double ProgressValue
-        {
-            get => _progressValue;
-            set => SetProperty(ref _progressValue, value);
-        }
-
-        private string _statusMessage = T("Status_Ready");
-        public string StatusMessage
-        {
-            get => _statusMessage;
-            set => SetProperty(ref _statusMessage, value);
-        }
-
-        private bool _canMerge;
-        public bool CanMerge
-        {
-            get => _canMerge;
-            set => SetProperty(ref _canMerge, value);
-        }
-
-        private FileItem? _selectedItem = null!;
-        public FileItem? SelectedItem
-        {
-            get => _selectedItem;
-            set
-            {
-                if (SetProperty(ref _selectedItem, value))
+                if (fileInspectInfo.IsEncrypted)
                 {
-                    UpdateMovementCommands();
-                }
-            }
-        }
-
-        private bool _enableAddDuplicateCheck = false;
-        public bool EnableAddDuplicateCheck
-        {
-            get => _enableAddDuplicateCheck;
-            set => SetProperty(ref _enableAddDuplicateCheck, value);
-        }
-
-        private bool _addPageNumbers = true;
-        public bool AddPageNumbers
-        {
-            get => _addPageNumbers;
-            set => SetProperty(ref _addPageNumbers, value);
-        }
-
-        private bool _enableImageSupport = true;
-        public bool EnableImageSupport
-        {
-            get => _enableImageSupport;
-            set => SetProperty(ref _enableImageSupport, value);
-        }
-
-        // output PDF document properties
-        private bool _isSubjectManuallySet = false;
-        private string _docTitle = "MergedFiles";
-        public string DocTitle
-        {
-            get => _docTitle;
-            set => SetProperty(ref _docTitle, value);
-        }
-
-        private string _docAuthor = "User of PDFMerger";
-        public string DocAuthor
-        {
-            get => _docAuthor;
-            set => SetProperty(ref _docAuthor, value);
-        }
-
-        private string _docSubject = "";
-        public string DocSubject
-        {
-            get => _docSubject;
-            set
-            {
-                if (SetProperty(ref _docSubject, value))
-                    _isSubjectManuallySet = true;
-            }
-        }
-
-        private string _docCreator = "PDFMerger";
-        public string DocCreator
-        {
-            get => _docCreator;
-            set => SetProperty(ref _docCreator, value);
-        }
-
-        // cancel support properties
-        private CancellationTokenSource? _cts;
-
-        private bool _isMerging;
-        public bool IsMerging
-        {
-            get => _isMerging;
-            set
-            {
-                if (SetProperty(ref _isMerging, value))
-                {
-                    UpdateCanMerge();
-                }
-            }
-        }
-
-        private void CancelMerge()
-        {
-            Debug.WriteLine($"---> [Cancel] 被调用了！时间: {DateTime.Now:HH:mm:ss.fff}");
-            _cts?.Cancel();
-            StatusMessage = T("Status_Cancelling", "Cancelling...");
-        }
-        public ICommand AboutCommand { get; private set; } = null!;
-        public ICommand CancelCommand { get; private set; } = null!;
-        public ICommand ClearListCommand { get; private set; } = null!;
-        public ICommand MergeCommand { get; private set; } = null!;
-        public ICommand MoveDownCommand { get; private set; } = null!;
-        public ICommand MoveUpCommand { get; private set; } = null!;
-        public ICommand RemoveSelectedCommand { get; private set; } = null!;
-        #endregion
-
-        #region public methods for View to call (add files, set output path) 
-        public void AddFiles(string[] paths)
-        {
-            if (paths == null || paths.Length == 0) return;
-
-            // if OutputPath is empty, set it to the directory of the first file with a default name
-            if (string.IsNullOrEmpty(OutputPath) && paths.Length > 0)
-            {
-                var dir = Path.GetDirectoryName(paths[0]);
-                if (!string.IsNullOrEmpty(dir))
-                    OutputPath = Path.Combine(dir, DefaultOutputPdfName);
-            }
-
-            StatusMessage = T("Status_Loading");
-            ProgressValue = 0;
-
-            // Note: This method is called on the UI thread (from Click or Drop events),
-            // so we read PDF information synchronously here, but to avoid blocking the UI, we use Task.Run to perform time-consuming operations in the background.
-            // However, updating the collection must be done on the UI thread.
-            Task.Run(async () =>
-            {
-                var inspectionService = new FileInspectionService();
-                foreach (var path in paths)
-                {
-                    if (!File.Exists(path)) continue;
-                    if (EnableAddDuplicateCheck && FileItems.Any(f => f.FilePath == path)) continue;
-                    var item = new FileItem
+                    var password = await ShowInputDialogBoxAsync(item.FileName);
+                    if (password == null)
                     {
-                        FilePath = path,
-                        FileName = Path.GetFileName(path)
-                    };
-                    StatusMessage = T("Status_Loading") + " " + item.FileName;
-                    var fileInspectInfo = inspectionService.Inspect(path);
-                    if (fileInspectInfo == null || !fileInspectInfo.IsSupported)
-                    {
-                        ShowMessage("" + T("Message_UnsupportedFile", item.FilePath));
-                        continue; // unsupported type, skip
+                        fileInspectInfo.IsSupported = false;
+                        ShowMessage("" + T("Message_UnsupportedFile", item.FileName));
+                        continue; // user cancel input password, skip this file
                     }
-                    if (fileInspectInfo.IsEncrypted)
+
+                    fileInspectInfo.Password = password;
+                    bool isLargeFile = fileInspectInfo.FileSize > 1024L * 1024 * 1024;
+                    if (isLargeFile)
                     {
-                        var password = await ShowInputDialogBoxAsync(item.FileName);
-                        if (password != null)
-                        {
-                            fileInspectInfo = inspectionService.Inspect(path, password);
-                        }
-                        else
+                        var warningMessage = T("Message_DecryptingLargeFile", item.FileName);
+                        var confirmed = await ShowConfirmAsync(warningMessage);
+                        if (!confirmed)
                         {
                             fileInspectInfo.IsSupported = false;
-                            ShowMessage("" + T("Message_UnsupportedFile", item.FileName));
-                            continue; // user cancel input password, skip this file
+                            fileInspectInfo.PageCount = 0;
+                            StatusMessage = T("Status_SkippedFile", item.FileName);
+                            continue;
                         }
+
                     }
-
-                    item.Type = fileInspectInfo.Type;
-                    item.PageCount = fileInspectInfo.PageCount;
-                    item.Author = fileInspectInfo.Author;
-                    item.IsEncrypted = fileInspectInfo.IsEncrypted;
-                    item.FileSize = fileInspectInfo.FileSize;
-                    item.Password = fileInspectInfo.Password;
-
-
-
-                    // marshal the add operation to the UI thread via Dispatcher
-                    if (fileInspectInfo.PageCount > 0)
+                    var verified = await VerifyPasswordWithRetryAsync(fileInspectInfo, path, password);
+                    if (!verified)
                     {
-                        Avalonia.Threading.Dispatcher.UIThread.Post(() => FileItems.Add(item));
-                    }
-                    else
-                    {
+                        fileInspectInfo.IsSupported = false;
                         StatusMessage = T("Status_SkippedFile", item.FileName);
+                        continue;
                     }
                 }
-            }).ContinueWith(_ =>
-            {
-                // when all files are processed, update status (also on UI thread)
-                Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+
+                item.Type = fileInspectInfo.Type;
+                item.PageCount = fileInspectInfo.PageCount;
+                item.Author = fileInspectInfo.Author;
+                item.IsEncrypted = fileInspectInfo.IsEncrypted;
+                item.FileSize = fileInspectInfo.FileSize;
+                item.Password = fileInspectInfo.Password;
+
+
+
+                // marshal the add operation to the UI thread via Dispatcher
+                if (fileInspectInfo.PageCount > 0)
                 {
-                    UpdateCanMerge();
-                    UpdateDefaultSubject();
-                    StatusMessage = FileItems.Count > 0
-                     ? T("Status_ListLoaded", FileItems.Count)
-                     : T("Status_ListEmpty");
-                });
-            });
-        }
-
-        private void ShowMessage(string message)
+                    Avalonia.Threading.Dispatcher.UIThread.Post(() => FileItems.Add(item));
+                }
+                else
+                {
+                    StatusMessage = T("Status_SkippedFile", item.FileName);
+                }
+            }
+        }).ContinueWith(_ =>
         {
-            Dispatcher.UIThread.Post(() =>
+            // when all files are processed, update status (also on UI thread)
+            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
             {
-                ShowMessageRequested?.Invoke(this, message);
+                UpdateCanMerge();
+                UpdateDefaultSubject();
+                StatusMessage = FileItems.Count > 0
+                 ? T("Status_ListLoaded", FileItems.Count)
+                 : T("Status_ListEmpty");
             });
-        }
-        private async Task ShowMessageAsync(string message)
+        });
+    }
+
+    private async Task<bool> VerifyPasswordWithRetryAsync(FileInspectionResult fileInspectionResult, string path, string initialPassword)
+    {
+        string? password = initialPassword;
+
+        while (password != null)
         {
-            if (ShowMessageRequestedTask != null)
-                await ShowMessageRequestedTask(message);
+            try
+            {
+                var inspectionService = new FileInspectionService();
+                var result = await Task.Run(() =>
+                    inspectionService.Inspect(path, password));
+
+                if (result.IsSupported && result.PageCount > 0)
+                {
+                    fileInspectionResult.PageCount = result.PageCount;
+                    fileInspectionResult.Author = result.Author;
+                    fileInspectionResult.Password = password;
+                    fileInspectionResult.IsEncrypted = true;
+                    fileInspectionResult.IsSupported = true;
+
+                    return true;
+                }
+
+                var Message_WrongPassword_Retry = T("Message_WrongPassword_Retry", fileInspectionResult.FileName);
+                var retry = await ShowConfirmAsync(Message_WrongPassword_Retry);
+
+                if (!retry) return false;
+
+                // let user input password again
+                password = await ShowInputDialogBoxAsync(fileInspectionResult.FileName);
+            }
+            catch (Exception ex)
+            {
+                ShowMessage(T("Message_InspectFailed", fileInspectionResult.FileName, ex.Message));
+                return false;
+            }
+
         }
 
-        private async Task<string?> ShowInputDialogBoxAsync(string fileName)
+        return false;
+    }
+
+
+
+    public void SetOutputPath(string path)
+    {
+        OutputPath = path;
+    }
+
+    #endregion
+
+    #region private methods (FileItemsChanged,clear, move up, move down, remove selected)
+    private void OnFileItemsChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        UpdateCanMerge();
+        UpdateMovementCommands();
+    }
+    // ---------- clear ----------
+    private void ClearList()
+    {
+        FileItems.Clear();
+        OutputPath = "";
+        UpdateCanMerge();
+        UpdateDefaultSubject();
+        StatusMessage = FileItems.Count > 0
+                      ? T("Status_ListLoaded", FileItems.Count)
+                      : T("Status_ListEmpty");
+
+    }
+
+    // ---------- move up ----------
+    private void MoveUp()
+    {
+        if (SelectedItem == null) return;
+        int index = FileItems.IndexOf(SelectedItem);
+        if (index > 0)
         {
-            if (PasswordRequested is null) return null;
-
-            string message = T("Message_InputPasswd", fileName);
-            string? noticeMesg = T("Message_EncryptWarning", "");
-            string? title = T("Message_InputPasswd_Title");
-
-            return await Dispatcher.UIThread.InvokeAsync(
-                () => PasswordRequested($"{ message}", $"{noticeMesg}", $"{title}"));
-        }
-
-        public void SetOutputPath(string path)
-        {
-            OutputPath = path;
-        }
-
-        #endregion
-
-        #region private methods (FileItemsChanged,clear, move up, move down, remove selected)
-        private void OnFileItemsChanged(object? sender, NotifyCollectionChangedEventArgs e)
-        {
-            UpdateCanMerge();
+            var item = FileItems[index];
+            FileItems.RemoveAt(index);
+            FileItems.Insert(index - 1, item);
+            SelectedItem = item;
             UpdateMovementCommands();
         }
-        // ---------- clear ----------
-        private void ClearList()
+    }
+
+    // ---------- move down ----------
+    private void MoveDown()
+    {
+        if (SelectedItem == null) return;
+        int index = FileItems.IndexOf(SelectedItem);
+        if (index < FileItems.Count - 1)
         {
-            FileItems.Clear();
-            OutputPath = "";
+            var item = FileItems[index];
+            FileItems.RemoveAt(index);
+            FileItems.Insert(index + 1, item);
+            SelectedItem = item;
+            UpdateMovementCommands();
+        }
+    }
+
+    // ---------- remove selected ----------
+    private void RemoveSelected()
+    {
+        if (SelectedItem != null)
+        {
+            FileItems.Remove(SelectedItem);
+            SelectedItem = null;
             UpdateCanMerge();
-            UpdateDefaultSubject();
+            (MoveUpCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            (MoveDownCommand as RelayCommand)?.RaiseCanExecuteChanged();
+
             StatusMessage = FileItems.Count > 0
-                          ? T("Status_ListLoaded", FileItems.Count)
-                          : T("Status_ListEmpty");
-
+                 ? T("Status_ListLoaded", FileItems.Count)
+                 : T("Status_ListEmpty");
         }
-
-        // ---------- move up ----------
-        private void MoveUp()
+    }
+    private bool CheckAndCleanMissingFiles()
+    {
+        var missingFiles = FileItems.Where(f => !File.Exists(f.FilePath)).ToList();
+        if (missingFiles.Any())
         {
-            if (SelectedItem == null) return;
-            int index = FileItems.IndexOf(SelectedItem);
-            if (index > 0)
+            foreach (var item in missingFiles)
             {
-                var item = FileItems[index];
-                FileItems.RemoveAt(index);
-                FileItems.Insert(index - 1, item);
-                SelectedItem = item;
-                UpdateMovementCommands();
+                FileItems.Remove(item);
             }
+            // trigger message event
+            var msg = T("Message_RemovedMissing", missingFiles.Count);
+            ShowMessage(msg);
+            return true; // missing files found
         }
+        return false; // no missing files
+    }
 
-        // ---------- move down ----------
-        private void MoveDown()
+
+    private bool CheckEncryptedFiles()
+    {
+        var encryptedWithoutPassword = FileItems
+            .Where(f => f.IsEncrypted && string.IsNullOrWhiteSpace(f.Password))
+            .ToList();
+        if (encryptedWithoutPassword.Any())
         {
-            if (SelectedItem == null) return;
-            int index = FileItems.IndexOf(SelectedItem);
-            if (index < FileItems.Count - 1)
-            {
-                var item = FileItems[index];
-                FileItems.RemoveAt(index);
-                FileItems.Insert(index + 1, item);
-                SelectedItem = item;
-                UpdateMovementCommands();
-            }
+            var msg = T("Message_EncryptedFiles", string.Join(",\n ", encryptedWithoutPassword.Select(f => f.FileName)));
+            ShowMessage(msg);
+            return true;
         }
+        return false;
+    }
+    private void UpdateDefaultSubject()
+    {
+        if (_isSubjectManuallySet) return; // If the user has manually modified it, do not overwrite
 
-        // ---------- remove selected ----------
-        private void RemoveSelected()
+        if (FileItems.Count == 0)
         {
-            if (SelectedItem != null)
-            {
-                FileItems.Remove(SelectedItem);
-                SelectedItem = null;
-                UpdateCanMerge();
-                (MoveUpCommand as RelayCommand)?.RaiseCanExecuteChanged();
-                (MoveDownCommand as RelayCommand)?.RaiseCanExecuteChanged();
-
-                StatusMessage = FileItems.Count > 0
-                     ? T("Status_ListLoaded", FileItems.Count)
-                     : T("Status_ListEmpty");
-            }
-        }
-        private bool CheckAndCleanMissingFiles()
-        {
-            var missingFiles = FileItems.Where(f => !File.Exists(f.FilePath)).ToList();
-            if (missingFiles.Any())
-            {
-                foreach (var item in missingFiles)
-                {
-                    FileItems.Remove(item);
-                }
-                // trigger message event
-                var msg = T("Message_RemovedMissing", missingFiles.Count);
-                ShowMessage(msg);
-                return true; // missing files found
-            }
-            return false; // no missing files
-        }
-
-
-        private bool CheckEncryptedFiles()
-        {
-            var encryptedWithoutPassword = FileItems
-                .Where(f => f.IsEncrypted && string.IsNullOrWhiteSpace(f.Password))
-                .ToList();
-            if (encryptedWithoutPassword.Any())
-            {
-                var msg = T("Message_EncryptedFiles", string.Join(",\n ", encryptedWithoutPassword.Select(f => f.FileName)));
-                ShowMessage(msg);
-                return true;
-            }
-            return false;
-        }
-        private void UpdateDefaultSubject()
-        {
-            if (_isSubjectManuallySet) return; // If the user has manually modified it, do not overwrite
-
-            if (FileItems.Count == 0)
-            {
-                _docSubject = "";
-                OnPropertyChanged(nameof(DocSubject));
-                return;
-            }
-
-            string firstFileName = Path.GetFileNameWithoutExtension(FileItems[0].FileName);
-            string date = DateTime.Now.ToString("yyyy-MM-dd");
-            string subject = $"{date} {firstFileName} MergedFiles";
-            _docSubject = subject;
+            _docSubject = "";
             OnPropertyChanged(nameof(DocSubject));
+            return;
         }
-        #endregion
 
-        #region private core merging logic
-        private async Task MergePdfs()
+        string firstFileName = Path.GetFileNameWithoutExtension(FileItems[0].FileName);
+        string date = DateTime.Now.ToString("yyyy-MM-dd");
+        string subject = $"{date} {firstFileName} MergedFiles";
+        _docSubject = subject;
+        OnPropertyChanged(nameof(DocSubject));
+    }
+    #endregion
+
+    #region private core merging logic
+    private async Task MergePdfs()
+    {
+        if (CheckAndCleanMissingFiles())
         {
-            if (CheckAndCleanMissingFiles())
+            StatusMessage = T("Status_RemovedMissing");
+            UpdateCanMerge();
+            return;
+        }
+
+        if (FileItems.Count == 0 || string.IsNullOrEmpty(OutputPath)) return;
+
+        if (CheckEncryptedFiles())
+        {
+            StatusMessage = T("Message_Move_Encrypted");
+            return;
+        }
+
+        ResolveUniqueOutputPath();
+
+        _cts = new CancellationTokenSource();
+        IsMerging = true;
+        CanMerge = false;
+        StatusMessage = T("Status_MergePreparing");
+        ProgressValue = 0;
+
+        var filePaths = FileItems.Select(f => f.FilePath).ToArray();
+
+        var progress = new Progress<MergeProgress>(p =>
+        {
+            if (_cts == null || _cts.IsCancellationRequested)
             {
-                StatusMessage = T("Status_RemovedMissing");
-                UpdateCanMerge();
                 return;
             }
 
-            if (FileItems.Count == 0 || string.IsNullOrEmpty(OutputPath)) return;
-
-            if (CheckEncryptedFiles())
-            {
-                StatusMessage = T("Message_Move_Encrypted");
-                return;
-            }
-
-            ResolveUniqueOutputPath();
-
-            _cts = new CancellationTokenSource();
-            IsMerging = true;
-            CanMerge = false;
-            StatusMessage = T("Status_MergePreparing");
-            ProgressValue = 0;
-
-            var filePaths = FileItems.Select(f => f.FilePath).ToArray();
-
-            var progress = new Progress<MergeProgress>(p =>
+            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
             {
                 if (_cts == null || _cts.IsCancellationRequested)
                 {
                     return;
                 }
 
-                Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                if (p.IsComplete)
                 {
-                    if (_cts == null || _cts.IsCancellationRequested)
-                    {
-                        return;
-                    }
-
-                    if (p.IsComplete)
-                    {
-                        StatusMessage = T("Status_MergeComplete", p.TotalPagesProcessed);
-                        ProgressValue = 100;
-                    }
-                    else
-                    {
-                        StatusMessage = T("Status_MergeProgress",
-                                           p.FileIndex + 1,
-                                           p.TotalFiles,
-                                           p.FileName ?? string.Empty,
-                                           p.PageCount);
-                        ProgressValue = p.PercentComplete;
-                    }
-                });
-            });
-
-            var options = new MergeOptions
-            {
-                IgnoreDuplicates = false,
-                Progress = progress,
-                BookmarkGenerator = new SimpleBookmarkGenerator(),
-                Title = DocTitle,
-                Author = DocAuthor,
-                Subject = DocSubject,
-                Creator = DocCreator,
-                AddPageNumbers = AddPageNumbers,
-                CancellationToken = _cts.Token
-            };
-
-            try
-            {
-                var result = await _pdfMergeService.MergeAsync(FileItems, OutputPath, options, _cts.Token);
-                _cts.Token.ThrowIfCancellationRequested();
-                if (result != null)
-                {
-                    if (result.Success)
-                    {
-                        StatusMessage = T("Status_MergerSuccess", result.TotalPages, result.OutputPath ?? string.Empty);
-                        if (result.DuplicatedFiles.Any())
-                            StatusMessage += T("Status_IgnoreDuplicateFiles", result.DuplicatedFiles);
-                    }
-                    else
-                    {
-                        StatusMessage = T("Status_MergeFailed", result.Error?.TechnicalDetail ?? string.Empty);
-                    }
+                    StatusMessage = T("Status_MergeComplete", p.TotalPagesProcessed);
+                    ProgressValue = 100;
                 }
+                else
+                {
+                    StatusMessage = T("Status_MergeProgress",
+                                       p.FileIndex + 1,
+                                       p.TotalFiles,
+                                       p.FileName ?? string.Empty,
+                                       p.PageCount);
+                    ProgressValue = p.PercentComplete;
+                }
+            });
+        });
 
-            }
-            catch (OperationCanceledException)
-            {
-                StatusMessage = T("Status_MergeCancelled");
-                ProgressValue = 0;
-            }
-            catch (Exception ex)
-            {
-                StatusMessage = T("Status_MergeFailed", ex.Message);
-            }
-            finally
-            {
-                IsMerging = false;
-                _cts?.Dispose();
-                _cts = null;
-                CanMerge = FileItems.Count > 0 && !string.IsNullOrEmpty(OutputPath);
-            }
-        }
-        #endregion
-
-        #region public methods for datagrid dragover and drop operate
-        public ObservableCollection<FileItem> FileItems { get; } = new ObservableCollection<FileItem>();
-        public void MoveFileItem(FileItem dragged, FileItem target)
+        var options = new MergeOptions
         {
-            int oldIndex = FileItems.IndexOf(dragged);
-            int newIndex = FileItems.IndexOf(target);
-            Debug.WriteLine($"MoveFileItem: oldIndex={oldIndex}, newIndex={newIndex}");
-            if (oldIndex != newIndex && oldIndex >= 0 && newIndex >= 0)
+            IgnoreDuplicates = false,
+            Progress = progress,
+            BookmarkGenerator = new SimpleBookmarkGenerator(),
+            Title = DocTitle,
+            Author = DocAuthor,
+            Subject = DocSubject,
+            Creator = DocCreator,
+            AddPageNumbers = AddPageNumbers,
+            CancellationToken = _cts.Token
+        };
+
+        try
+        {
+            var result = await _pdfMergeService.MergeAsync(FileItems, OutputPath, options, _cts.Token);
+            _cts.Token.ThrowIfCancellationRequested();
+            if (result != null)
             {
-                int adjustedNewIndex = (oldIndex < newIndex) ? newIndex - 1 : newIndex;
-                FileItems.RemoveAt(oldIndex);
-                FileItems.Insert(adjustedNewIndex, dragged);
-                SelectedItem = FileItems[adjustedNewIndex];
-
-                var names = string.Join(", ", FileItems.Select(x => x.FileName));
-                Debug.WriteLine($"After Move: {names}");
-
+                if (result.Success)
+                {
+                    StatusMessage = T("Status_MergerSuccess", result.TotalPages, result.OutputPath ?? string.Empty);
+                    if (result.DuplicatedFiles.Any())
+                        StatusMessage += T("Status_IgnoreDuplicateFiles", result.DuplicatedFiles);
+                }
+                else
+                {
+                    StatusMessage = T("Status_MergeFailed", result.Error?.TechnicalDetail ?? string.Empty);
+                }
             }
-        }
-        #endregion
 
-        #region private helper methods
-        private void UpdateCanMerge()
+        }
+        catch (OperationCanceledException)
         {
-            CanMerge = FileItems.Count > 0 && !string.IsNullOrEmpty(OutputPath) && !IsMerging; ;
-            (MergeCommand as RelayCommand)?.RaiseCanExecuteChanged();
-            (CancelCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            StatusMessage = T("Status_MergeCancelled");
+            ProgressValue = 0;
         }
-        private void UpdateMovementCommands()
+        catch (Exception ex)
         {
-            (MoveUpCommand as RelayCommand)?.RaiseCanExecuteChanged();
-            (MoveDownCommand as RelayCommand)?.RaiseCanExecuteChanged();
-            (RemoveSelectedCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            StatusMessage = T("Status_MergeFailed", ex.Message);
         }
-        private static string T(string key, params object[] args)
+        finally
         {
-            var value = I18n.GetString(key);
-            if (string.IsNullOrEmpty(value))
-                return key;
-            return args.Length > 0 ? string.Format(value, args) : value;
+            IsMerging = false;
+            _cts?.Dispose();
+            _cts = null;
+            CanMerge = FileItems.Count > 0 && !string.IsNullOrEmpty(OutputPath);
         }
-
-        private void ResolveUniqueOutputPath()
-        {
-            if (!File.Exists(OutputPath)) return;
-
-            string directory = Path.GetDirectoryName(OutputPath)!;
-            string baseName = Path.GetFileNameWithoutExtension(OutputPath);
-            string extension = Path.GetExtension(OutputPath);
-
-            int counter = 1;
-            string finalPath;
-            do
-            {
-                finalPath = Path.Combine(directory, $"{baseName}_{counter}{extension}");
-                counter++;
-            } while (File.Exists(finalPath));
-
-            OutputPath = finalPath;
-        }
-
-
-        #endregion
     }
+    #endregion
+
+    #region public methods for datagrid dragover and drop operate
+    public ObservableCollection<FileItem> FileItems { get; } = new ObservableCollection<FileItem>();
+    public void MoveFileItem(FileItem dragged, FileItem target)
+    {
+        int oldIndex = FileItems.IndexOf(dragged);
+        int newIndex = FileItems.IndexOf(target);
+        Debug.WriteLine($"MoveFileItem: oldIndex={oldIndex}, newIndex={newIndex}");
+        if (oldIndex != newIndex && oldIndex >= 0 && newIndex >= 0)
+        {
+            int adjustedNewIndex = (oldIndex < newIndex) ? newIndex - 1 : newIndex;
+            FileItems.RemoveAt(oldIndex);
+            FileItems.Insert(adjustedNewIndex, dragged);
+            SelectedItem = FileItems[adjustedNewIndex];
+
+            var names = string.Join(", ", FileItems.Select(x => x.FileName));
+            Debug.WriteLine($"After Move: {names}");
+
+        }
+    }
+    #endregion
+
+    #region private helper methods
+    private void UpdateCanMerge()
+    {
+        CanMerge = FileItems.Count > 0 && !string.IsNullOrEmpty(OutputPath) && !IsMerging; ;
+        (MergeCommand as RelayCommand)?.RaiseCanExecuteChanged();
+        (CancelCommand as RelayCommand)?.RaiseCanExecuteChanged();
+    }
+    private void UpdateMovementCommands()
+    {
+        (MoveUpCommand as RelayCommand)?.RaiseCanExecuteChanged();
+        (MoveDownCommand as RelayCommand)?.RaiseCanExecuteChanged();
+        (RemoveSelectedCommand as RelayCommand)?.RaiseCanExecuteChanged();
+    }
+    private static string T(string key, params object[] args)
+    {
+        var value = I18n.GetString(key);
+        if (string.IsNullOrEmpty(value))
+            return key;
+        return args.Length > 0 ? string.Format(value, args) : value;
+    }
+
+    private void ResolveUniqueOutputPath()
+    {
+        if (!File.Exists(OutputPath)) return;
+
+        string directory = Path.GetDirectoryName(OutputPath)!;
+        string baseName = Path.GetFileNameWithoutExtension(OutputPath);
+        string extension = Path.GetExtension(OutputPath);
+
+        int counter = 1;
+        string finalPath;
+        do
+        {
+            finalPath = Path.Combine(directory, $"{baseName}_{counter}{extension}");
+            counter++;
+        } while (File.Exists(finalPath));
+
+        OutputPath = finalPath;
+    }
+
+
+    #endregion
+
+    #region message dialog and password input dialog support
+
+    public event EventHandler<string> ShowMessageRequested = delegate { };
+    private void ShowMessage(string message)
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            ShowMessageRequested?.Invoke(this, message);
+        });
+    }
+    public Func<string, Task>? ShowMessageRequestedTask;
+    private Task ShowMessageAsync(string message)
+    {
+        var handler = ShowMessageRequestedTask;
+        if (handler == null)
+            return Task.CompletedTask;
+
+        return Dispatcher.UIThread.InvokeAsync(() => handler(message));
+    }
+
+    public event Func<string, string, string, Task<string>>? PasswordRequested;
+    private async Task<string?> ShowInputDialogBoxAsync(string fileName)
+    {
+        if (PasswordRequested is null) return null;
+
+        string message = T("Message_InputPasswd", fileName);
+        string? noticeMesg = T("Message_EncryptWarning", "");
+        string? title = T("Message_InputPasswd_Title");
+
+        return await Dispatcher.UIThread.InvokeAsync(
+            () => PasswordRequested($"{message}", $"{noticeMesg}", $"{title}"));
+    }
+
+    public event Func<string, string, string, Task<bool>>? ConfirmRequested;
+    private Task<bool> ShowConfirmAsync(string message)
+    {
+        if (ConfirmRequested is null) return Task.FromResult(false);
+        return Dispatcher.UIThread.InvokeAsync(() => ConfirmRequested(message, "", ""));
+    }
+    #endregion
 }

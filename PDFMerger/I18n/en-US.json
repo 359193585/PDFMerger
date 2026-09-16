@@ -66,6 +66,7 @@
     "Message_InputPasswd_Title": "Please Input",
     "Message_InputPasswd": "Enter the password for the encrypted document \"{0}\":",
     "Message_EncryptWarning": "⚠️ After merging an encrypted document, its content will no longer be protected. Please confirm the information is safe.",
+    "Message_DecryptingLargeFile": "Decrypting large file\n \"{0}\" \nThis may take a while. The file will be loaded into the file list after password verification. Click OK to verify and load, or click No to skip the file.",
 
     "Error_BiggerThanMaxSize": "❌ A PDF file larger than 2GB was detected. The current library does not support merging such large files. Please split the file first. {0}"
 }

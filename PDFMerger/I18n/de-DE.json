@@ -66,6 +66,7 @@
     "Message_InputPasswd_Title": "Bitte eingeben",
     "Message_InputPasswd": "Bitte das Passwort für das verschlüsselte Dokument \"{0}\" eingeben:",
     "Message_EncryptWarning": "⚠️ Nach dem Zusammenführen eines verschlüsselten Dokuments ist dessen Inhalt nicht mehr geschützt. Bitte stellen Sie die Informationssicherheit sicher.",
+    "Message_DecryptingLargeFile": "Große Datei entschlüsseln\n \"{0}\" \nDies kann einige Zeit dauern. Nach der Passwortüberprüfung wird sie in die Dateiliste geladen. Klicken Sie auf Ja, um zu überprüfen und zu laden, oder auf Nein, um diese Datei zu überspringen.",
 
     "Error_BiggerThanMaxSize": "❌ Eine PDF-Datei größer als 2 GB wurde erkannt. Die aktuelle Bibliothek unterstützt das Zusammenführen solch großer Dateien nicht. Bitte die Datei zuerst aufteilen. {0}"
 }

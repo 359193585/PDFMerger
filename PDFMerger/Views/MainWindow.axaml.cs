@@ -10,6 +10,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using MsBox.Avalonia;
+using MsBox.Avalonia.Enums;
 using PDFMerger.Infrastructure;
 using PDFMerger.Models;
 using PDFMerger.ViewModels;
@@ -46,6 +47,17 @@ namespace PDFMerger.Views
                     notice: notice
                     );
                 return await dialog.ShowDialog<string>(this);
+            };
+
+            vm.ConfirmRequested += async (message, notice, title) =>
+            {
+                var box = MessageBoxManager.GetMessageBoxStandard(
+                    string.IsNullOrWhiteSpace(title) ? "Confirm" : title,
+                    message,
+                    ButtonEnum.YesNo);
+
+                var result = await box.ShowAsync();
+                return result == ButtonResult.Yes;
             };
 
             // ----- enable drag and drop for DataGrid  -----
