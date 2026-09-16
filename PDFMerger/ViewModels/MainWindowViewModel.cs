@@ -23,7 +23,7 @@ namespace PDFMerger.ViewModels
         public event EventHandler<string> ShowMessageRequested = delegate { };
         public Func<string, Task>? ShowMessageRequestedTask;
 
-        public event Func<string, Task<string?>>? PasswordRequested;
+        public event Func<string, string, string, Task<string>>? PasswordRequested;
 
         public MainWindowViewModel()
         {
@@ -238,7 +238,7 @@ namespace PDFMerger.ViewModels
                     item.FileSize = fileInspectInfo.FileSize;
                     item.Password = fileInspectInfo.Password;
 
-                   
+
 
                     // marshal the add operation to the UI thread via Dispatcher
                     if (fileInspectInfo.PageCount > 0)
@@ -279,16 +279,14 @@ namespace PDFMerger.ViewModels
 
         private async Task<string?> ShowInputDialogBoxAsync(string fileName)
         {
-            string titleMesg = T("Message_InputPasswd", fileName);
+            if (PasswordRequested is null) return null;
 
-            if (PasswordRequested is null)
-                return null;
+            string message = T("Message_InputPasswd", fileName);
+            string? noticeMesg = T("Message_EncryptWarning", "");
+            string? title = T("Message_InputPasswd_Title");
 
-            var password = await Dispatcher.UIThread.InvokeAsync(
-                async () => await PasswordRequested(
-                    $"{titleMesg}"));
-
-            return password;
+            return await Dispatcher.UIThread.InvokeAsync(
+                () => PasswordRequested($"{ message}", $"{noticeMesg}", $"{title}"));
         }
 
         public void SetOutputPath(string path)

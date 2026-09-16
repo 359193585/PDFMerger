@@ -38,10 +38,14 @@ namespace PDFMerger.Views
                 await box.ShowAsync();
             };
 
-            vm.PasswordRequested += async message =>
+            vm.PasswordRequested += async (message, notice, title) =>
             {
-                var dialog = new InputDialog(message);
-                return await dialog.ShowDialog<string?>(this);
+                var dialog = new InputDialog(
+                    message,
+                    title: title,
+                    notice: notice
+                    );
+                return await dialog.ShowDialog<string>(this);
             };
 
             // ----- enable drag and drop for DataGrid  -----

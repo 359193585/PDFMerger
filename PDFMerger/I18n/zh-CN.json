@@ -62,6 +62,8 @@
     "Message_Move_Encrypted": "❌已检测到加密文件，无法合并，请删除加密文件。",
     "Message_UnsupportedFile": "❌ 不支持的文件类型：{0}",
     "Message_RemovedMissing": "已自动移除 {0} 个不存在的文件。请确认列表后重新合并。",
+
+    "Message_InputPasswd_Title": "信息输入",
     "Message_InputPasswd": "请输入加密文档\"{0}\"的密码:",
     "Message_EncryptWarning": "⚠️ 加密文档合并后，其内容将失去保护，请确认信息安全。",
 

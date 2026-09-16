@@ -62,6 +62,8 @@
     "Message_Move_Encrypted": "❌ 暗号化ファイルが検出されました。結合できません。暗号化ファイルを削除してください。",
     "Message_UnsupportedFile": "❌ 未対応のファイル形式です：{0}",
     "Message_RemovedMissing": "存在しないファイル {0} 個を自動的に削除しました。リストを確認して再度結合してください。",
+
+    "Message_InputPasswd_Title": "パスワード入力",
     "Message_InputPasswd": "暗号化されたドキュメント \"{0}\" のパスワードを入力してください：",
     "Message_EncryptWarning": "⚠️ 暗号化されたドキュメントを結合すると、その内容は保護されなくなります。情報の安全性を確認してください。",
 

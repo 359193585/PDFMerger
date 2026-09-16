@@ -4,12 +4,13 @@ using Avalonia.Interactivity;
 namespace PDFMerger.Views;
 public partial class InputDialog : Window
 {
-    public InputDialog(string message, string title = "Please Input")
+    public InputDialog(string message,string notice = "", string title = "Please Input")
     {
         InitializeComponent();
 
-        Title = title;
         MessageText.Text = message;
+        NoticeText.Text = notice;
+        Title = title;
 
         Opened += (_, _) =>
         {

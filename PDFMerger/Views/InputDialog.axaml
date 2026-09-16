@@ -33,5 +33,10 @@
                 Click="CancelButton_Click" />
         </StackPanel>
 
+        <StackPanel Margin="20" Spacing="12">
+           <TextBlock
+            x:Name="NoticeText"
+            TextWrapping="Wrap" />
+       </StackPanel>
     </StackPanel>
 </Window>
