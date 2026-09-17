@@ -2,7 +2,6 @@
 using System;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
-using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -445,113 +444,138 @@ public class MainWindowViewModel : ObservableObject
     }
     #endregion
 
-    #region private core merging logic
+    #region private core merging logic, refactored into smaller methods in 2026-9-17
     private async Task MergePdfs()
+    {
+        if (!ValidateBeforeMergeAsync()) return;   // Validate
+
+        ResolveUniqueOutputPath();                       // resolve unique output path
+        using var cts = new CancellationTokenSource();
+        BeginMerge(cts);
+
+        var options = BuildMergeOptions(cts.Token);
+        var result = await RunMergeAsync(options, cts.Token); // Run the merge operation
+
+        ApplyMergeResult(result);  // Apply the result to update status and messages
+    }
+    private bool ValidateBeforeMergeAsync()
     {
         if (CheckAndCleanMissingFiles())
         {
             StatusMessage = T("Status_RemovedMissing");
             UpdateCanMerge();
-            return;
+            return false;
         }
 
-        if (FileItems.Count == 0 || string.IsNullOrEmpty(OutputPath)) return;
+        if (FileItems.Count == 0 || string.IsNullOrEmpty(OutputPath)) return false;
 
         if (CheckEncryptedFiles())
         {
             StatusMessage = T("Message_Move_Encrypted");
-            return;
+            return false;
         }
 
-        ResolveUniqueOutputPath();
+        return true;
+    }
 
+    private void BeginMerge(CancellationTokenSource cts)
+    {
         _cts = new CancellationTokenSource();
         IsMerging = true;
         CanMerge = false;
         StatusMessage = T("Status_MergePreparing");
         ProgressValue = 0;
+    }
 
-        var filePaths = FileItems.Select(f => f.FilePath).ToArray();
-
-        var progress = new Progress<MergeProgress>(p =>
-        {
-            if (_cts == null || _cts.IsCancellationRequested)
-            {
-                return;
-            }
-
-            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
-            {
-                if (_cts == null || _cts.IsCancellationRequested)
-                {
-                    return;
-                }
-
-                if (p.IsComplete)
-                {
-                    StatusMessage = T("Status_MergeComplete", p.TotalPagesProcessed);
-                    ProgressValue = 100;
-                }
-                else
-                {
-                    StatusMessage = T("Status_MergeProgress",
-                                       p.FileIndex + 1,
-                                       p.TotalFiles,
-                                       p.FileName ?? string.Empty,
-                                       p.PageCount);
-                    ProgressValue = p.PercentComplete;
-                }
-            });
-        });
-
-        var options = new MergeOptions
+    private MergeOptions BuildMergeOptions(CancellationToken token)
+    {
+        return new MergeOptions
         {
             IgnoreDuplicates = false,
-            Progress = progress,
+            Progress = CreateProgressReporter(token),
             BookmarkGenerator = new SimpleBookmarkGenerator(),
             Title = DocTitle,
             Author = DocAuthor,
             Subject = DocSubject,
             Creator = DocCreator,
             AddPageNumbers = AddPageNumbers,
-            CancellationToken = _cts.Token
+            CancellationToken = token
         };
+    }
 
+    private IProgress<MergeProgress> CreateProgressReporter(CancellationToken token)
+    {
+        return new Progress<MergeProgress>(p =>
+            Dispatcher.UIThread.Post(() =>
+            {
+                if (token.IsCancellationRequested) return;
+                ApplyProgress(p);
+            }));
+    }
+
+    private void ApplyProgress(MergeProgress p)
+    {
+        if (p.IsComplete)
+        {
+            StatusMessage = T("Status_MergeComplete", p.TotalPagesProcessed);
+            ProgressValue = 100;
+            return;
+        }
+
+        StatusMessage = T("Status_MergeProgress",
+               p.FileIndex + 1,
+               p.TotalFiles,
+               p.FileName ?? string.Empty,
+               p.PageCount);
+    }
+
+    private async Task<MergeResult?> RunMergeAsync(MergeOptions options, CancellationToken token)
+    {
         try
         {
-            var result = await _pdfMergeService.MergeAsync(FileItems, OutputPath, options, _cts.Token);
-            _cts.Token.ThrowIfCancellationRequested();
-            if (result != null)
-            {
-                if (result.Success)
-                {
-                    StatusMessage = T("Status_MergerSuccess", result.TotalPages, result.OutputPath ?? string.Empty);
-                    if (result.DuplicatedFiles.Any())
-                        StatusMessage += T("Status_IgnoreDuplicateFiles", result.DuplicatedFiles);
-                }
-                else
-                {
-                    StatusMessage = T("Status_MergeFailed", result.Error?.TechnicalDetail ?? string.Empty);
-                }
-            }
-
+            var result = await _pdfMergeService.MergeAsync(FileItems, OutputPath, options, token);
+            token.ThrowIfCancellationRequested();
+            return result;
         }
         catch (OperationCanceledException)
         {
             StatusMessage = T("Status_MergeCancelled");
             ProgressValue = 0;
+            return null;
         }
         catch (Exception ex)
         {
             StatusMessage = T("Status_MergeFailed", ex.Message);
+            return null;
         }
         finally
         {
-            IsMerging = false;
-            _cts?.Dispose();
-            _cts = null;
-            CanMerge = FileItems.Count > 0 && !string.IsNullOrEmpty(OutputPath);
+            EndMerge();
         }
+    }
+    private void ApplyMergeResult(MergeResult? result)
+    {
+        if (result == null) return;
+
+        if (result.Success)
+        {
+            StatusMessage = T("Status_MergerSuccess", result.TotalPages, result.OutputPath ?? string.Empty);
+
+            if (result.DuplicatedFiles.Any())
+                StatusMessage += T("Status_IgnoreDuplicateFiles", result.DuplicatedFiles);
+        }
+        else
+        {
+            StatusMessage = T("Status_MergeFailed", result.Error?.TechnicalDetail ?? string.Empty);
+        }
+    }
+
+    private void EndMerge()
+    {
+        IsMerging = false;
+        _cts?.Dispose();
+        _cts = null;
+        UpdateCanMerge();
     }
     #endregion
 
