@@ -62,6 +62,7 @@
     "Message_Move_Encrypted": "❌ Verschlüsselte Datei erkannt. Zusammenführen nicht möglich. Bitte verschlüsselte Datei entfernen.",
     "Message_UnsupportedFile": "❌ Nicht unterstützter Dateityp: {0}",
     "Message_RemovedMissing": "{0} fehlende Datei(en) wurden automatisch entfernt. Bitte Liste prüfen und erneut zusammenführen.",
+    "Message_MergerLargeFile": "Die zusammengeführte Datei wird voraussichtlich {0} groß sein, was lange dauern kann. Bitte haben Sie Geduld.",
 
     "Message_InputPasswd_Title": "Bitte eingeben",
     "Message_InputPasswd": "Bitte das Passwort für das verschlüsselte Dokument \"{0}\" eingeben:",

@@ -62,6 +62,7 @@
     "Message_Move_Encrypted": "❌ Encrypted file detected. Cannot merge. Please remove the encrypted file.",
     "Message_UnsupportedFile": "❌ Unsupported file type: {0}",
     "Message_RemovedMissing": "{0} missing file(s) were removed automatically. Please review the list and merge again.",
+    "Message_MergerLargeFile": "The merged file size is expected to reach {0}, which may take a long time. Please be patient.",
 
     "Message_InputPasswd_Title": "Please Input",
     "Message_InputPasswd": "Enter the password for the encrypted document \"{0}\":",
