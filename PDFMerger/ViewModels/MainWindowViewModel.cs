@@ -23,6 +23,7 @@ public class MainWindowViewModel : ObservableObject
     public MainWindowViewModel()
     {
         _pdfMergeService = new PdfSharpMergeService();
+        //Initialize();
         InitCommands();
         FileItems.CollectionChanged += OnFileItemsChanged;
     }
@@ -37,7 +38,10 @@ public class MainWindowViewModel : ObservableObject
         MoveUpCommand = new RelayCommand(MoveUp, () => SelectedItem != null && FileItems.IndexOf(SelectedItem) > 0);
         RemoveSelectedCommand = new RelayCommand(RemoveSelected, () => SelectedItem != null);
     }
-
+    public void Initialize()
+    {
+        StatusMessage = T("Status_Ready");
+    }
     #region Properties for binding to the view
 
     private string _outputPath = string.Empty;
@@ -60,7 +64,7 @@ public class MainWindowViewModel : ObservableObject
         set => SetProperty(ref _progressValue, value);
     }
 
-    private string _statusMessage = T("Status_Ready");
+    private string _statusMessage = string.Empty;
     public string StatusMessage
     {
         get => _statusMessage;
@@ -450,7 +454,7 @@ public class MainWindowViewModel : ObservableObject
         if (!ValidateBeforeMergeAsync()) return;   // Validate
 
         ResolveUniqueOutputPath();                       // resolve unique output path
-        using var cts = new CancellationTokenSource();
+        using var cts = new CancellationTokenSource();  // create a cancellation token source
         BeginMerge(cts);
 
         var options = BuildMergeOptions(cts.Token);
@@ -621,7 +625,7 @@ public class MainWindowViewModel : ObservableObject
         return args.Length > 0 ? string.Format(value, args) : value;
     }
 
-    private void ResolveUniqueOutputPath()
+    public void ResolveUniqueOutputPath()
     {
         if (!File.Exists(OutputPath)) return;
 

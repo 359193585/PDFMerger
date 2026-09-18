@@ -23,6 +23,7 @@ namespace PDFMerger.Views
         {
             InitializeComponent();
             var vm = new MainWindowViewModel();
+            vm.Initialize();
             DataContext = vm;
             ConfigureDataGridColumns();
 

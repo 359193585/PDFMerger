@@ -23,6 +23,17 @@ public static class I18n
                 _fallback[kv.Key] = kv.Value;
         }
     }
+
+    // for testing purposes, allow initializing with a custom dictionary
+    public static void Initialize(Dictionary<string, string> resources)
+    {
+        _resources = resources ?? new Dictionary<string, string>(StringComparer.Ordinal);
+
+        _fallback.Clear();
+        foreach (var kv in _resources)
+            _fallback[kv.Key] = kv.Value;
+    }
+
     private static Dictionary<string, string>? LoadFromDisk(string cultureName)
     {
         try

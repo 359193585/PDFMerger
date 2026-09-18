@@ -2,7 +2,7 @@ using PdfSharp.Pdf;
 using PdfSharp.Pdf.IO;
 using PdfSharp.Pdf.Security;
 
-namespace PDFMerger.Tests;
+namespace PDFMerger.Tests.StressTest;
 
 
 public class LargePdfEncryptionTests
@@ -10,6 +10,8 @@ public class LargePdfEncryptionTests
     [Fact]
     public void EncryptLargePdf_ShouldCreatePasswordProtectedFile()
     {
+        // 测试目标：对一个接近 2GB 的 PDF 文件进行加密，生成一个带密码保护的 PDF 文件。
+        // 注意：此测试需要一个实际存在的接近 2GB 的 PDF 文件，路径请根据实际情况修改。
         string sourcePath = @"E:\temp\TestPdfFile\testpdf-nearly-2G.pdf";      // 原始 1GB PDF
         string destPath = @"E:\temp\TestPdfFile\testpdf-nearly-2G-encrypted(密码1111）.pdf";
         string userPassword = "1111";
